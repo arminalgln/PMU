@@ -24,6 +24,18 @@ selected_data = pickle.load(pkl_file)
 pkl_file.close()
 
 #%%
+
+for pmu in selected_data:
+    selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
+    
+#%%
+# =============================================================================
+#     normalize data
+# =============================================================================
+
+train=selected_data['1224'].iloc[0:100000].values
+    
+#%%
 #power factor calculation
 import sklearn
 import numpy as np
@@ -32,19 +44,21 @@ from sklearn.ensemble import IsolationForest
 
 rng = np.random.RandomState(42)
 
-# Generate train data
-X = 0.3 * rng.randn(100, 2)
-X_train = np.r_[X + 2, X - 2]
-# Generate some regular novel observations
-X = 0.3 * rng.randn(20, 2)
-X_test = np.r_[X + 2, X - 2]
-# Generate some abnormal novel observations
-X_outliers = rng.uniform(low=-4, high=4, size=(20, 2))
 
 # fit the model
 clf = IsolationForest(behaviour='new', max_samples=100,
-                      random_state=rng, contamination='auto')
-clf.fit(X_train)
-y_pred_train = clf.predict(X_train)
-y_pred_test = clf.predict(X_test)
-y_pred_outliers = clf.predict(X_outliers)
+                      random_state=rng, contamination=0.01)
+clf.fit(train)
+y_pred_train = clf.predict(train)
+#y_pred_test = clf.predict(X_test)
+#y_pred_outliers = clf.predict(X_outliers)
+#%%
+SampleNum=100000
+start=0
+end=start+SampleNum
+power=selected_data['1224']['pfC'][start:end]
+items=np.where(y_pred_train[start:end]== -1)
+marks= list(items[0])
+plt.plot(power , color='#0033cc',linestyle='-', linewidth=1,label='Actuals')
+plt.plot(power, color='#ff5960',
+         markevery=marks, marker='^', linestyle=' ', markersize=5)

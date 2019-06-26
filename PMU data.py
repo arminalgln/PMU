@@ -11,6 +11,8 @@ import pandas as pd
 import os
 import pickle
 import matplotlib.pyplot as plt
+import operator
+import math
 #%%
 # =============================================================================
 # =============================================================================
@@ -49,6 +51,8 @@ for key in columns:
 #        print(entry)
     if (entry !='LSTATE') and (index=='(Mean)'):
         SeparateData[loc][entry]=data[key]
+#%%
+Locations=['1086','1224','1225','1200']
 #%%
 SeparateData={}
 Locations=['1086','1224','1225','1200']
@@ -95,16 +99,62 @@ outputt.close()
 pkl_file = open('OneDay.pkl', 'rb')
 selected_data = pickle.load(pkl_file)
 pkl_file.close()
+#%%
+#active and reactive power consumption calculation
 
+Active={}
+Reacive={}
+keys={}
+pf={}
+for loc in Locations:
+    k=list(selected_data[loc].keys())    
+    keys[loc]=sorted(k)
+    Active[loc]={}
+    Reacive[loc]={}
+    pf[loc]={}
+    
+for loc in Locations:
+    Active[loc]['A']=selected_data[loc]['L1MAG']*selected_data[loc]['C1MAG']*(np.cos((selected_data[loc]['L1ANG']-selected_data[loc]['C1ANG'])*(np.pi/180)))
+    Active[loc]['B']=selected_data[loc]['L2MAG']*selected_data[loc]['C2MAG']*(np.cos((selected_data[loc]['L2ANG']-selected_data[loc]['C2ANG'])*(np.pi/180)))
+    Active[loc]['C']=selected_data[loc]['L3MAG']*selected_data[loc]['C3MAG']*(np.cos((selected_data[loc]['L3ANG']-selected_data[loc]['C3ANG'])*(np.pi/180)))
         
-        
+    Reacive[loc]['A']=selected_data[loc]['L1MAG']*selected_data[loc]['C1MAG']*(np.sin((selected_data[loc]['L1ANG']-selected_data[loc]['C1ANG'])*(np.pi/180)))
+    Reacive[loc]['B']=selected_data[loc]['L2MAG']*selected_data[loc]['C2MAG']*(np.sin((selected_data[loc]['L2ANG']-selected_data[loc]['C2ANG'])*(np.pi/180)))
+    Reacive[loc]['C']=selected_data[loc]['L3MAG']*selected_data[loc]['C3MAG']*(np.sin((selected_data[loc]['L3ANG']-selected_data[loc]['C3ANG'])*(np.pi/180)))
+       
+    pf[loc]['A']=Active[loc]['A']/np.sqrt(np.square(Active[loc]['A'])+np.square(Reacive[loc]['A']))
+    pf[loc]['B']=Active[loc]['B']/np.sqrt(np.square(Active[loc]['B'])+np.square(Reacive[loc]['B']))
+    pf[loc]['C']=Active[loc]['C']/np.sqrt(np.square(Active[loc]['C'])+np.square(Reacive[loc]['C']))
     
     
+    selected_data[loc]['PA']=Active[loc]['A']
+    selected_data[loc]['PB']=Active[loc]['B']
+    selected_data[loc]['PC']=Active[loc]['C']
     
+    selected_data[loc]['QA']=Reacive[loc]['A']
+    selected_data[loc]['QB']=Reacive[loc]['B']
+    selected_data[loc]['QC']=Reacive[loc]['C'] 
+  
+    selected_data[loc]['pfA']=pf[loc]['A']
+    selected_data[loc]['pfB']=pf[loc]['B']
+    selected_data[loc]['pfC']=pf[loc]['C']
     
+   
+#%%
     
-    
-    
+    # write python dict to a file
+output = open('CompleteOneDay.pkl', 'wb')
+pickle.dump(selected_data, output)
+output.close()
+
+
+#%%
+ #read a pickle file
+pkl_file = open('CompleteOneDay.pkl', 'rb')
+selected_data = pickle.load(pkl_file)
+pkl_file.close()
+
+#%%   
     
     
     

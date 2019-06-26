@@ -1,7 +1,7 @@
 # Don't track content of these folders
 Raw_data/
 OneDay.pkl
-
+CompleteOneDay.pkl
 
 # Compiled source #
 ###################

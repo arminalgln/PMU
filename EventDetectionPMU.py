@@ -52,63 +52,72 @@ clf.fit(train)
 y_pred_train = clf.predict(train)
 #y_pred_test = clf.predict(X_test)
 #y_pred_outliers = clf.predict(X_outliers)
-#%%
-SampleNum=80
-	
-start=16626
-end=start+SampleNum
-power=selected_data['1224']['C1MAG'][start:end]
-#items=np.where(y_pred_train[start:end]== -1)
-#marks= list(items[0])
-plt.plot(power , color='#0033cc',linestyle='-', linewidth=1,label='Actuals')
-#plt.plot(power, color='#ff5960',
-#         markevery=marks, marker='^', linestyle=' ', markersize=15)
 
-plt.show()
-         
-SampleNum=80
-
-start=17762
-end=start+SampleNum
-power=selected_data['1224']['C1MAG'][start:end]
-#items=np.where(y_pred_train[start:end]== -1)
-#marks= list(items[0])
-plt.plot(power , color='#0033cc',linestyle='-', linewidth=1,label='Actuals')
-plt.show()
 #%%
 # =============================================================================
 # Different plots
+SampleNum=40
+start=10000
+end=start+SampleNum
+N=200
+pmu='1224'
+shift=int(SampleNum/2)
 
-# =============================================================================
-plt.plot(selected_data['1224']['C1MAG'][0:100],selected_data['1224']['L1MAG'][0:100])
-plt.scatter(selected_data['1224']['C1MAG'][0:100],selected_data['1224']['L1MAG'][0:100])
-plt.scatter(selected_data['1224']['C1MAG'],selected_data['1224']['L1MAG'])
-plt.scatter(selected_data['1224']['C1MAG']hnjh,selected_data['1224']['L1MAG'])
-plt.scatter(selected_data['1224']['C1MAG'][0:1000],selected_data['1224']['L1MAG'][0:1000])
-plt.scatter(selected_data['1224']['C1MAG'][0:10000],selected_data['1224']['L1MAG'][0:10000])
-plt.scatter(selected_data['1224']['C2MAG'][0:10000],selected_data['1224']['L2MAG'][0:10000])
-plt.plot(selected_data['1224']['C2MAG'][0:10000],selected_data['1224']['L2MAG'][0:10000])
-plt.plot(selected_data['1224']['PB'][0:10000],selected_data['1224']['PB'][0:10000])
-plt.plot(selected_data['1224']['PB'][0:10000],selected_data['1224']['QB'][0:10000])
-plt.scatter(selected_data['1224']['PB'][0:10000],selected_data['1224']['QB'][0:10000])
-plt.plot(selected_data['1224']['PB'][0:100000],selected_data['1224']['QB'][0:100000])
-plt.plot(selected_data['1224']['PB'][0:10000],selected_data['1224']['PB'][
-plt.plot(selected_data['1224']['C2MAG'][0:100000],selected_data['1224']['L2MAG'][0:100000])
-plt.plot(selected_data['1224']['C2MAG'][0:1000000],selected_data['1224']['L2MAG'][0:1000000])
-plt.plot(selected_data['1224']['PB'][0:1000000],selected_data['1224']['QB'][0:1000000])
-plt.plot(selected_data['1224']['PB'][0:1000000],np.abs(selected_data['1224']['QB'][0:1000000]))
-plt.scatter(selected_data['1224']['C1MAG'][0:100],selected_data['1224']['L1MAG'][0:100])
-plt.plot(selected_data['1224']['C1MAG'][0:100],selected_data['1224']['L1MAG'][0:100])
-plt.plot(selected_data['1224']['C1MAG'][0:100])
-plt.plot(selected_data['1224']['L1MAG'][0:100])
-plt.plot(selected_data['1224']['L1MAG'][0:1000])
-plt.plot(selected_data['1224']['C1MAG'][0:1000])
-plt.plot(selected_data['1224']['C1MAG'][600:800])
-plt.plot(selected_data['1224']['L1MAG'][600:800])
-plt.plot(selected_data['1224']['C1MAG'][600:800],selected_data['1224']['L1MAG'][600:800])
+
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift])
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['L1MAG'][start+i*shift:end+i*shift])
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['PA'][start+i*shift:end+i*shift])
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['QA'][start+i*shift:end+i*shift])
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['pfA'][start+i*shift:end+i*shift])
+plt.show()
+
+plt.plot(selected_data[pmu]['C1MAG'][start:end+N*shift])
+plt.show()
+plt.scatter(selected_data[pmu]['C1MAG'][start:end+N*shift],selected_data[pmu]['L1MAG'][start:end+N*shift])
+
+#%%
+
+SampleNum=40
+start=10000
+end=start+SampleNum
+N=2000
+pmu='1224'
+shift=int(SampleNum/2)
+
+from sklearn import preprocessing
+
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]))
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['L1MAG'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['L1MAG'][start+i*shift:end+i*shift]))
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['PA'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['PA'][start+i*shift:end+i*shift]))
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['QA'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['QA'][start+i*shift:end+i*shift]))
+plt.show()
+for i in range(N):
+    plt.plot(np.arange(SampleNum),selected_data[pmu]['pfA'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['pfA'][start+i*shift:end+i*shift]))
+plt.show()
+
+plt.plot(selected_data[pmu]['C1MAG'][start:end+N*shift])
+plt.show()
+plt.scatter(selected_data[pmu]['C1MAG'][start:end+N*shift],selected_data[pmu]['L1MAG'][start:end+N*shift])
 
 
 #%%
+
 
 fig, ax1 = plt.subplots()
 

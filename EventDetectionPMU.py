@@ -141,3 +141,34 @@ ax2.tick_params(axis='y', labelcolor=color)
 
 fig.tight_layout()  # otherwise the right y-label is slightly clipped
 plt.show()
+#%%
+
+# =============================================================================
+# dividing dataset to the sub sequence of time series.
+# =============================================================================
+
+SampleNum=40
+start=10000
+end=start+SampleNum
+N=200
+pmu='1224'
+shift=int(SampleNum/2)
+
+train_data=[]
+for i in range(N):
+    train_data.append(selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]))
+
+
+#%%
+from sklearn.cluster import KMeans
+kmeans = KMeans(n_clusters=2, random_state=0).fit(train_data)
+
+
+
+
+
+
+
+
+
+

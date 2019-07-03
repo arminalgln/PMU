@@ -154,10 +154,6 @@ pkl_file = open('CompleteOneDay.pkl', 'rb')
 selected_data = pickle.load(pkl_file)
 pkl_file.close()
 
-#%%   
-    
-    
-    
-        
+
         
     

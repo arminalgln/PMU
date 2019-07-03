@@ -13,7 +13,7 @@ melo.csv
 *.exe
 *.o
 *.so
-
+*.png
 *.so
 
 # Packages #

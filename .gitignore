@@ -4,6 +4,8 @@ OneDay.pkl
 CompleteOneDay.pkl
 current.csv
 melo.csv
+figures/
+report/
 
 # Compiled source #
 ###################
@@ -15,6 +17,8 @@ melo.csv
 *.so
 *.png
 *.so
+*.svg
+
 
 # Packages #
 ############

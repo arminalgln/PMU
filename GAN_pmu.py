@@ -18,24 +18,22 @@ import os
 import pickle
 import operator
 import math
-#%%
 
+#%%
 def load_data(start,SampleNum,N):
          #read a pickle file
     pkl_file = open('CompleteOneDay.pkl', 'rb')
     selected_data = pickle.load(pkl_file)
     pkl_file.close()
-
-
     for pmu in selected_data:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
 
-    train=selected_data['1224']['C1MAG'].iloc[0:N*SampleNum].values
+    select=selected_data['1224']['C1MAG'].iloc[0:int(N*SampleNum/2)].values
     
     end=start+SampleNum
 
     pmu='1224'
-    shift=int(SampleNum)
+    shift=int(SampleNum/2)
     
     train_data=[]
     for i in range(N):
@@ -46,7 +44,7 @@ def load_data(start,SampleNum,N):
     # convert shape of x_train from (60000, 28, 28) to (60000, 784) 
     # 784 columns per row
     
-    return x_train,train
+    return x_train,select
 #X_train=load_data()
 #print(X_train.shape)
 #%%
@@ -73,16 +71,16 @@ g.summary()
 #%%
 def create_discriminator():
     discriminator=Sequential()
-    discriminator.add(Dense(units=1024,input_dim=40, activation='relu'))
+    discriminator.add(Dense(units=1024,input_dim=40))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
        
     
-    discriminator.add(Dense(units=512, activation='relu'))
+    discriminator.add(Dense(units=512))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
        
-    discriminator.add(Dense(units=256, activation='relu'))
+    discriminator.add(Dense(units=256))
     discriminator.add(LeakyReLU(0.2))
     
     discriminator.add(Dense(units=1, activation='sigmoid'))
@@ -105,7 +103,7 @@ gan.summary()
 
 #%%
 def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(10,10)):
-    scale=5
+    scale=1
     noise= scale*np.random.normal(loc=0, scale=1, size=[examples, 100])
     generated_images = generator.predict(noise)
     generated_images = generated_images.reshape(100,40,1)
@@ -119,8 +117,9 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=100
-X_train, selected = load_data(0,40,4000)
+batch_size=200
+start,SampleNum,N=(0,40,50000)
+X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
 generator= create_generator()
@@ -128,7 +127,7 @@ discriminator= create_discriminator()
 gan = create_gan(discriminator, generator)
 #%%
 def training(generator,discriminator,gan,epochs, batch_size=100):
-    scale=5
+    scale=1
     for e in range(1,epochs+1 ):
         print("Epoch %d" %e)
         for _ in tqdm(range(batch_size)):
@@ -165,47 +164,89 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
             #and training the chained GAN model with Discriminator’s weights freezed.
             gan.train_on_batch(noise, y_gen)
             
-        if e == 1 or e % 5 == 0:
-           
-            plot_generated_images(e, generator)
-training(generator,discriminator,gan,200,128)
+#        if e == 1 or e % 5 == 0:
+#           
+#            plot_generated_images(e, generator)
+batch_size=200
+epochnum=200
+training(generator,discriminator,gan,epochnum,batch_size)
+
+#%%
+reducedmean=[]
+count=0
+for i in X_train:
+
+    reducedmean.append(i)
+
+reducedmean=np.array(reducedmean)
+reducedmean=reducedmean.ravel()
+plt.plot(reducedmean)
+reducedmean=pd.DataFrame(reducedmean)
 #%%
 a=[]
-for i in range(4000):
-    a.append(discriminator.predict(X_train[i].reshape(1,40)))
+count=0
+for i in range(N):
+
+    a.append(discriminator.predict(X_train[i].reshape(1,SampleNum)))
+
 a=np.array(a)
 
 plt.plot(a.ravel())
 plt.show()
+
+
 #%%
-threshold=0.3
-print(np.where(a<threshold)[0].shape)
-for i in np.where(a<threshold)[0]:
-    plt.plot(X_train[i])
-plt.show()
-#%%
-for i in np.where(sigmoid(a,True)<0.05)[0]:
+high=.99
+low=0.01
+anoms=np.union1d(np.where(a>high)[0], np.where(a<low)[0])
+print(np.union1d(np.where(a>high)[0], np.where(a<low)[0]).shape)
+for i in anoms :
 #    print(i)
     plt.plot(X_train[i])
 plt.show()
+
 #%%
-   
-for i in np.intersect1d(np.where(a<threshold)[0],np.where(sigmoid(a,True)<0.05)[0]):
-    print(i)
-    plt.plot(X_train[i])
+selected=pd.DataFrame(selected)
+
 #%%
-for i in range(4):
-    plt.plot(X_train[i])
+fig_size = plt.rcParams["figure.figsize"]
+ 
+ 
+# Set figure width to 12 and height to 9
+fig_size[0] = 60
+fig_size[1] = 30
+plt.rcParams["figure.figsize"] = fig_size
+start=0
+dur=1000000
+end=start+dur
+selected['color']='b'
+for i in anoms:
+#    print(i)
+    selected['color'].iloc[i*int(SampleNum/2):((i+1)*int(SampleNum/2)+40)]='r'
+
+markers_on=np.where(selected['color'].iloc[start:end]=='r')
+#plt.plot(selected[0].iloc[start:end], markevery=list(markers_on),marker='X',mec='r',mew=np.log(np.log(dur))
+#    ,ms=2*np.log(np.log(dur)),mfcalt='r')
+plt.plot(selected[0].iloc[start:end])
+plt.xlabel('timeslots',fontsize=28)
+plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
+for i in anoms:
+    if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
+        plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
+plt.savefig('long.pdf', format='pdf', dpi=1200)
+plt.savefig('long %d.png' %dur)
 #%%
-def sigmoid(x, derivative=False):
-  return x*(1-x) if derivative else 1/(1+np.exp(-x))
-#%%
-#%%  
-event_pointer=np.where(a<threshold)[0]
-k=X_train.ravel()
-k.reshape(1,4000)
-k=pd.DataFrame(k)
-plt.plot(k[0:1000],color='r')
-plt.plot(k[1000:2000],color='b')
-plt.show()
-        
+dur_anoms=[]
+for i in anoms:
+    if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
+        dur_anoms.append([i*int(SampleNum/2),((i+1)*int(SampleNum/2)+20)])
+        plt.plot(selected[0].iloc[i*int(SampleNum/2)-20:((i+1)*int(SampleNum/2)+40)].values)
+        plt.xlabel('timeslots',fontsize=28)
+        plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
+        plt.savefig('figures/event %d.png' %i)
+        plt.savefig('figures/event %d.pdf', format='pdf', dpi=1200)
+        plt.show()
+
+print(dur_anoms)
+print(len(dur_anoms))
+

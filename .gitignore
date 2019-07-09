@@ -18,7 +18,8 @@ report/
 *.png
 *.so
 *.svg
-
+*.pdf
+*.html
 
 # Packages #
 ############

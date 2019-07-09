@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 %matplotlib inline
 import keras
-from keras.layers import Dense, Dropout, Input
+from keras.layers import Dense, Dropout, Input,Embedding, Flatten
 from keras.models import Model,Sequential
 from keras.datasets import mnist
 from tqdm import tqdm
@@ -19,7 +19,7 @@ import pickle
 import operator
 import math
 
-#%% 
+#%%
 def load_data(start,SampleNum,N):
          #read a pickle file
     pkl_file = open('CompleteOneDay.pkl', 'rb')
@@ -53,25 +53,33 @@ def adam_optimizer():
 #%%
 def create_generator():
     generator=Sequential()
+    generator.add(Embedding(input_dim=100,output_dim=1,input_length=10))
+    generator.add(Flatten())
     generator.add(Dense(units=256,input_dim=100))
     generator.add(LeakyReLU(0.2))
-    
+
+
     generator.add(Dense(units=512))
     generator.add(LeakyReLU(0.2))
     
-    generator.add(Dense(units=1024))
+    generator.add(LSTM(units=512,return_sequences=True))
     generator.add(LeakyReLU(0.2))
     
+    generator.add(LSTM(units=512,return_sequences=False))
+    generator.add(LeakyReLU(0.2))
+    
+      
     generator.add(Dense(units=40))
     
     generator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
     return generator
 g=create_generator()
 g.summary()
-
 #%%
 def create_discriminator():
     discriminator=Sequential()
+    discriminator.add(Embedding(, 1, input_length=40))
+    discriminator.add(F)
     discriminator.add(Dense(units=1024,input_dim=40))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
@@ -80,11 +88,20 @@ def create_discriminator():
     discriminator.add(Dense(units=512))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
+    
+    discriminator.add(LSTM(units=512,return_sequences=True))
+    discriminator.add(LeakyReLU(0.2))
+    
+    discriminator.add(LSTM(units=512,return_sequences=False))
+    discriminator.add(LeakyReLU(0.2))
+    
        
     discriminator.add(Dense(units=256))
     discriminator.add(LeakyReLU(0.2))
     
     discriminator.add(Dense(units=1, activation='sigmoid'))
+
+
     
     discriminator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
     return discriminator
@@ -118,8 +135,8 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=10
-start,SampleNum,N=(0,40,100000)
+batch_size=100
+start,SampleNum,N=(0,40,5000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
@@ -168,8 +185,8 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
 #        if e == 1 or e % 5 == 0:
 #           
 #            plot_generated_images(e, generator)
-batch_size=100
-epochnum=200
+batch_size=200
+epochnum=20
 training(generator,discriminator,gan,epochnum,batch_size)
 
 #%%
@@ -192,28 +209,16 @@ count=0
 for i in range(N):
 
     a.append(discriminator.predict(X_train[i].reshape(1,SampleNum)))
-#%%
+
 a=np.array(a)
-#%%
-fig_size = plt.rcParams["figure.figsize"]
- 
- 
-# Set figure width to 12 and height to 9
-fig_size[0] = 8
-fig_size[1] = 6
+
 plt.plot(a.ravel())
 plt.show()
 
 
 #%%
-high=0.9999
-low=0.002
-fig_size = plt.rcParams["figure.figsize"]
- 
- 
-# Set figure width to 12 and height to 9
-fig_size[0] = 8
-fig_size[1] = 6
+high=.99
+low=0.01
 anoms=np.union1d(np.where(a>high)[0], np.where(a<low)[0])
 print(np.union1d(np.where(a>high)[0], np.where(a<low)[0]).shape)
 for i in anoms :
@@ -233,7 +238,7 @@ fig_size[0] = 60
 fig_size[1] = 30
 plt.rcParams["figure.figsize"] = fig_size
 start=0
-dur=N*20
+dur=1000000
 end=start+dur
 selected['color']='b'
 for i in anoms:

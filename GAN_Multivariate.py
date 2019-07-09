@@ -18,7 +18,7 @@ import os
 import pickle
 import operator
 import math
-
+from sklearn import preprocessing
 #%% 
 def load_data(start,SampleNum,N):
          #read a pickle file
@@ -27,24 +27,31 @@ def load_data(start,SampleNum,N):
     pkl_file.close()
     for pmu in selected_data:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
-
-    select=selected_data['1224']['C1MAG'].iloc[0:int(N*SampleNum/2)].values
+    features=['L2MAG', 'L1MAG', 'C1MAG', 'L3MAG',
+       'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC',]
+    select=[]
+    for f in features:
+        select.append(selected_data['1224'][f].iloc[0:int(N*SampleNum/2)+20].values)
+    
+    select=np.array(select)
+    
     
     end=start+SampleNum
-
     pmu='1224'
     shift=int(SampleNum/2)
     
-    train_data=[]
+    train_data=np.zeros((N,12,SampleNum))
     for i in range(N):
-        train_data.append(selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]-np.mean(selected_data[pmu]['C1MAG'][start+i*shift:end+i*shift]))
+        temp=select[:,start+i*shift:end+i*shift] 
+        temp=(temp-temp.mean(axis=1).reshape(-1,1)) ## reduced mean
+        temp = preprocessing.scale(temp)  ## standardized
+        train_data[i,:]=temp
 
-    x_train=np.array(train_data)
     
     # convert shape of x_train from (60000, 28, 28) to (60000, 784) 
     # 784 columns per row
     
-    return x_train,select
+    return train_data,select
 #X_train=load_data()
 #print(X_train.shape)
 #%%
@@ -62,7 +69,7 @@ def create_generator():
     generator.add(Dense(units=1024))
     generator.add(LeakyReLU(0.2))
     
-    generator.add(Dense(units=40))
+    generator.add(Dense(units=12*40))
     
     generator.compile(loss='binary_crossentropy', optimizer=adam_optimizer())
     return generator
@@ -72,7 +79,7 @@ g.summary()
 #%%
 def create_discriminator():
     discriminator=Sequential()
-    discriminator.add(Dense(units=1024,input_dim=40))
+    discriminator.add(Dense(units=1024,input_dim=12*40))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
        
@@ -118,16 +125,18 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=10
-start,SampleNum,N=(0,40,100000)
+batch_size=100
+start,SampleNum,N=(0,40,1000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
+#%%
+X_train=X_train.reshape(N,12*SampleNum)
 #%%
 generator= create_generator()
 discriminator= create_discriminator()
 gan = create_gan(discriminator, generator)
 #%%
-def training(generator,discriminator,gan,epochs, batch_size=100):
+def training(generator,discriminator,gan,epochs, batch_size):
     scale=1
     for e in range(1,epochs+1 ):
         print("Epoch %d" %e)
@@ -137,10 +146,10 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
             
             # Generate fake MNIST images from noised input
             generated_images = generator.predict(noise)
-            
+#            print(generated_images.shape)
             # Get a random set of  real images
             image_batch =X_train[np.random.randint(low=0,high=X_train.shape[0],size=batch_size)]
-            
+#            print(image_batch.shape)
             #Construct different batches of  real and fake data 
             X= np.concatenate([image_batch, generated_images])
             
@@ -168,8 +177,8 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
 #        if e == 1 or e % 5 == 0:
 #           
 #            plot_generated_images(e, generator)
-batch_size=100
-epochnum=200
+#batch_size=10
+epochnum=100
 training(generator,discriminator,gan,epochnum,batch_size)
 
 #%%
@@ -191,7 +200,7 @@ a=[]
 count=0
 for i in range(N):
 
-    a.append(discriminator.predict(X_train[i].reshape(1,SampleNum)))
+    a.append(discriminator.predict(X_train[i].reshape(1,SampleNum*12)))
 #%%
 a=np.array(a)
 #%%
@@ -206,8 +215,8 @@ plt.show()
 
 
 #%%
-high=0.9999
-low=0.002
+high=1
+low=0.1
 fig_size = plt.rcParams["figure.figsize"]
  
  
@@ -216,21 +225,23 @@ fig_size[0] = 8
 fig_size[1] = 6
 anoms=np.union1d(np.where(a>high)[0], np.where(a<low)[0])
 print(np.union1d(np.where(a>high)[0], np.where(a<low)[0]).shape)
+tt=X_train.reshape(N,12,SampleNum)
 for i in anoms :
-#    print(i)
-    plt.plot(X_train[i])
+    print(i)
+    plt.plot(tt[i][1])
 plt.show()
 
 #%%
 selected=pd.DataFrame(selected)
+selected=selected.T
 
 #%%
 fig_size = plt.rcParams["figure.figsize"]
  
  
 # Set figure width to 12 and height to 9
-fig_size[0] = 60
-fig_size[1] = 30
+fig_size[0] = 8
+fig_size[1] = 6
 plt.rcParams["figure.figsize"] = fig_size
 start=0
 dur=N*20
@@ -243,14 +254,16 @@ for i in anoms:
 markers_on=np.where(selected['color'].iloc[start:end]=='r')
 #plt.plot(selected[0].iloc[start:end], markevery=list(markers_on),marker='X',mec='r',mew=np.log(np.log(dur))
 #    ,ms=2*np.log(np.log(dur)),mfcalt='r')
-plt.plot(selected[0].iloc[start:end])
+for i in range(5):
+    plt.plot(selected[i].iloc[start:end])
+    plt.show()
 plt.xlabel('timeslots',fontsize=28)
 plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
 for i in anoms:
     if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
         plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
-plt.savefig('long.pdf', format='pdf', dpi=1200)
-plt.savefig('long %d.png' %dur)
+#plt.savefig('long.pdf', format='pdf', dpi=1200)
+#plt.savefig('long %d.png' %dur)
 #%%
 dur_anoms=[]
 for i in anoms:

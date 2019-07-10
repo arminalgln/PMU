@@ -119,7 +119,7 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     
 #%%
 batch_size=10
-start,SampleNum,N=(0,40,100000)
+start,SampleNum,N=(0,40,1000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
@@ -169,7 +169,7 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
 #           
 #            plot_generated_images(e, generator)
 batch_size=100
-epochnum=200
+epochnum=20
 training(generator,discriminator,gan,epochnum,batch_size)
 
 #%%
@@ -207,7 +207,7 @@ plt.show()
 
 #%%
 high=0.9999
-low=0.002
+low=0.14
 fig_size = plt.rcParams["figure.figsize"]
  
  
@@ -229,8 +229,8 @@ fig_size = plt.rcParams["figure.figsize"]
  
  
 # Set figure width to 12 and height to 9
-fig_size[0] = 60
-fig_size[1] = 30
+fig_size[0] = 8
+fig_size[1] = 6
 plt.rcParams["figure.figsize"] = fig_size
 start=0
 dur=N*20
@@ -249,8 +249,8 @@ plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
 for i in anoms:
     if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
         plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
-plt.savefig('long.pdf', format='pdf', dpi=1200)
-plt.savefig('long %d.png' %dur)
+#plt.savefig('long.pdf', format='pdf', dpi=1200)
+#plt.savefig('long %d.png' %dur)
 #%%
 dur_anoms=[]
 for i in anoms:

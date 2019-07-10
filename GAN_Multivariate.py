@@ -35,23 +35,26 @@ def load_data(start,SampleNum,N):
     
     select=np.array(select)
     
+    select_proc=preprocessing.scale(select,axis=1)
     
     end=start+SampleNum
     pmu='1224'
     shift=int(SampleNum/2)
     
     train_data=np.zeros((N,12,SampleNum))
+    reduced_mean=np.zeros((12,20))
     for i in range(N):
-        temp=select[:,start+i*shift:end+i*shift] 
+        temp=select_proc[:,start+i*shift:end+i*shift] 
         temp=(temp-temp.mean(axis=1).reshape(-1,1)) ## reduced mean
-        temp = preprocessing.scale(temp)  ## standardized
+#        temp = preprocessing.scale(temp,axis=1)  ## standardized
+        reduced_mean=np.concatenate((reduced_mean,temp[:,0:20]),axis=1)
         train_data[i,:]=temp
-
+    
     
     # convert shape of x_train from (60000, 28, 28) to (60000, 784) 
     # 784 columns per row
     
-    return train_data,select
+    return train_data,select,select_proc,reduced_mean
 #X_train=load_data()
 #print(X_train.shape)
 #%%
@@ -125,9 +128,10 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=100
-start,SampleNum,N=(0,40,1000)
-X_train, selected = load_data(start,SampleNum,N)
+batch_size=50
+epochnum=100
+start,SampleNum,N=(0,40,10000)
+X_train, selected ,proc, red = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
 X_train=X_train.reshape(N,12*SampleNum)
@@ -177,29 +181,16 @@ def training(generator,discriminator,gan,epochs, batch_size):
 #        if e == 1 or e % 5 == 0:
 #           
 #            plot_generated_images(e, generator)
-#batch_size=10
-epochnum=100
+#batch_size=0
+
 training(generator,discriminator,gan,epochnum,batch_size)
 
-#%%
-reducedmean=[]
-count=0
-for i in X_train:
-    if count%2==0:
-        reducedmean.append(i)
-    count+=1
 
-reducedmean=np.array(reducedmean)
-reducedmean=reducedmean.ravel()
-plt.plot(reducedmean)
-plt.savefig('reduced.png')
-reducedmean=pd.DataFrame(reducedmean)
 
 #%%
 a=[]
-count=0
-for i in range(N):
 
+for i in range(N):
     a.append(discriminator.predict(X_train[i].reshape(1,SampleNum*12)))
 #%%
 a=np.array(a)
@@ -215,21 +206,24 @@ plt.show()
 
 
 #%%
-high=1
-low=0.1
+high=.99
+low=0.001
 fig_size = plt.rcParams["figure.figsize"]
  
  
 # Set figure width to 12 and height to 9
 fig_size[0] = 8
 fig_size[1] = 6
-anoms=np.union1d(np.where(a>high)[0], np.where(a<low)[0])
-print(np.union1d(np.where(a>high)[0], np.where(a<low)[0]).shape)
+anoms=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
+print(np.union1d(np.where(a>=high)[0], np.where(a<=low)[0]).shape)
 tt=X_train.reshape(N,12,SampleNum)
-for i in anoms :
-    print(i)
-    plt.plot(tt[i][1])
-plt.show()
+#%%
+
+normal=np.arange(100,110)
+for i in anoms[0:3] :
+    for j in range(12):
+        plt.plot(tt[i][j])
+    plt.show()
 
 #%%
 selected=pd.DataFrame(selected)
@@ -240,8 +234,8 @@ fig_size = plt.rcParams["figure.figsize"]
  
  
 # Set figure width to 12 and height to 9
-fig_size[0] = 8
-fig_size[1] = 6
+fig_size[0] = 10
+fig_size[1] = 8
 plt.rcParams["figure.figsize"] = fig_size
 start=0
 dur=N*20
@@ -254,14 +248,17 @@ for i in anoms:
 markers_on=np.where(selected['color'].iloc[start:end]=='r')
 #plt.plot(selected[0].iloc[start:end], markevery=list(markers_on),marker='X',mec='r',mew=np.log(np.log(dur))
 #    ,ms=2*np.log(np.log(dur)),mfcalt='r')
-for i in range(5):
-    plt.plot(selected[i].iloc[start:end])
+#for i in range(5):
+#    plt.plot(selected[i].iloc[start:end])
+#    plt.show()
+for j in [1,2,6,9]:
+    plt.plot(selected[j].iloc[start:end])
+#    plt.xlabel('timeslots',fontsize=28)
+#    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
+    for i in anoms:
+        if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
+            plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
     plt.show()
-plt.xlabel('timeslots',fontsize=28)
-plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
-for i in anoms:
-    if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
-        plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
 #plt.savefig('long.pdf', format='pdf', dpi=1200)
 #plt.savefig('long %d.png' %dur)
 #%%
@@ -269,11 +266,11 @@ dur_anoms=[]
 for i in anoms:
     if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
         dur_anoms.append([i*int(SampleNum/2),((i+1)*int(SampleNum/2)+20)])
-        plt.plot(selected[0].iloc[i*int(SampleNum/2)-20:((i+1)*int(SampleNum/2)+40)].values)
+        plt.plot(selected[2].iloc[i*int(SampleNum/2)-20:((i+1)*int(SampleNum/2)+40)].values)
         plt.xlabel('timeslots',fontsize=28)
         plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
-        plt.savefig('figures/event %d.png' %i)
-        plt.savefig('figures/event %d.pdf' %i, format='pdf', dpi=1200)
+#        plt.savefig('figures/event %d.png' %i)
+#        plt.savefig('figures/event %d.pdf' %i, format='pdf', dpi=1200)
         plt.show()
 
 print(dur_anoms)

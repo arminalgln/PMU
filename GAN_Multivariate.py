@@ -19,6 +19,8 @@ import pickle
 import operator
 import math
 from sklearn import preprocessing
+from keras.models import load_model
+
 #%% 
 def load_data(start,SampleNum,N):
          #read a pickle file
@@ -44,6 +46,8 @@ def load_data(start,SampleNum,N):
     train_data=np.zeros((N,12,SampleNum))
     reduced_mean=np.zeros((12,20))
     for i in range(N):
+        if i% 1000==0:
+            print('iter num: %i', i)
         temp=select_proc[:,start+i*shift:end+i*shift] 
         temp=(temp-temp.mean(axis=1).reshape(-1,1)) ## reduced mean
 #        temp = preprocessing.scale(temp,axis=1)  ## standardized
@@ -128,9 +132,9 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=50
-epochnum=100
-start,SampleNum,N=(0,40,10000)
+batch_size=100
+epochnum=200
+start,SampleNum,N=(0,40,20000)
 X_train, selected ,proc, red = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
@@ -188,6 +192,12 @@ training(generator,discriminator,gan,epochnum,batch_size)
 
 
 #%%
+
+gan.save('gan_mul_dense_N100000_e200_b100.h5')
+gan.save('generator_mul_dense_N100000_e200_b100.h5')
+gan.save('discriminator_mul_dense_N100000_e200_b100.h5')
+#%%
+
 a=[]
 
 for i in range(N):
@@ -206,8 +216,8 @@ plt.show()
 
 
 #%%
-high=.99
-low=0.001
+high=.98
+low=0.01
 fig_size = plt.rcParams["figure.figsize"]
  
  
@@ -220,7 +230,7 @@ tt=X_train.reshape(N,12,SampleNum)
 #%%
 
 normal=np.arange(100,110)
-for i in anoms[0:3] :
+for i in anoms :
     for j in range(12):
         plt.plot(tt[i][j])
     plt.show()

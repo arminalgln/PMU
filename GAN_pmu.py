@@ -18,6 +18,7 @@ import os
 import pickle
 import operator
 import math
+import time
 
 #%% 
 def load_data(start,SampleNum,N):
@@ -118,7 +119,7 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=10
+batch_size=500
 start,SampleNum,N=(0,40,1000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
@@ -127,7 +128,7 @@ generator= create_generator()
 discriminator= create_discriminator()
 gan = create_gan(discriminator, generator)
 #%%
-def training(generator,discriminator,gan,epochs, batch_size=100):
+def training(generator,discriminator,gan,epochs, batch_size):
     scale=1
     for e in range(1,epochs+1 ):
         print("Epoch %d" %e)
@@ -168,10 +169,12 @@ def training(generator,discriminator,gan,epochs, batch_size=100):
 #        if e == 1 or e % 5 == 0:
 #           
 #            plot_generated_images(e, generator)
-batch_size=100
-epochnum=20
+batch_size=1000
+epochnum=10
+tic=time.clock()
 training(generator,discriminator,gan,epochnum,batch_size)
-
+toc=time.clock()
+print(toc-tic)
 #%%
 reducedmean=[]
 count=0

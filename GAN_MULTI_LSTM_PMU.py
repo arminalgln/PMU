@@ -4,8 +4,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 %matplotlib inline
+import os
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import keras
-from keras.layers import Dense, Dropout, Input, Embedding, LSTM, Reshape
+from keras.layers import Dense, Dropout, Input, Embedding, LSTM, Reshape, CuDNNLSTM
 from keras.models import Model,Sequential
 from keras.datasets import mnist
 from tqdm import tqdm
@@ -14,12 +16,13 @@ from keras.activations import relu
 from keras.optimizers import adam
 import numpy as np
 import tensorflow as tf
-import os
+
 import pickle
 import operator
 import math
 from sklearn import preprocessing
 from keras.models import load_model
+import time
 
 #%% 
 def load_data(start,SampleNum,N):
@@ -69,7 +72,7 @@ def adam_optimizer():
 #%%
 def create_generator():
     generator=Sequential()
-    generator.add(LSTM(units=256,input_shape=(100,1)))
+    generator.add(CuDNNLSTM(units=256,input_shape=(100,1)))
     generator.add(LeakyReLU(0.2))
     
     generator.add(Dense(units=512))
@@ -88,7 +91,7 @@ g.summary()
 #%%
 def create_discriminator():
     discriminator=Sequential()
-    discriminator.add(LSTM(units=256,input_shape=(40,12)))
+    discriminator.add(CuDNNLSTM(units=256,input_shape=(40,12)))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
        
@@ -135,8 +138,8 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=10
-epochnum=100
+batch_size=100
+epochnum=10
 #%%
 start,SampleNum,N=(0,40,1000)
 X_train, selected = load_data(start,SampleNum,N)
@@ -149,7 +152,12 @@ generator= create_generator()
 discriminator= create_discriminator()
 gan = create_gan(discriminator, generator)
 #%%
+import wandb
+wandb.init()
+#%%
+
 def training(generator,discriminator,gan,epochs, batch_size):
+    
     scale=1
     for e in range(1,epochs+1 ):
         print("Epoch %d" %e)
@@ -188,17 +196,18 @@ def training(generator,discriminator,gan,epochs, batch_size):
             #training  the GAN by alternating the training of the Discriminator 
             #and training the chained GAN model with Discriminator’s weights freezed.
             gan.train_on_batch(noise, y_gen)
-            
+    toc = time.clock()
+
 #        if e == 1 or e % 5 == 0:
 #           
             
 #            plot_generated_images(e, generator)
 #batch_size=0
-
+tic = time.clock()   
 training(generator,discriminator,gan,epochnum,batch_size)
+toc = time.clock()
 
-
-
+print(toc-tic)
 #%%
 
 gan.save('gan_mul_LSTM_N1000_e100_b10.h5')

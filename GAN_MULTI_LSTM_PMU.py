@@ -23,6 +23,7 @@ import math
 from sklearn import preprocessing
 from keras.models import load_model
 import time
+from scipy.stats import norm
 
 #%% 
 def load_data(start,SampleNum,N):
@@ -32,7 +33,7 @@ def load_data(start,SampleNum,N):
     pkl_file.close()
     for pmu in ['1224']:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
-    features=['L2MAG', 'L1MAG', 'C1MAG', 'L3MAG',
+    features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
        'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC',]
     
     select=[]
@@ -138,10 +139,11 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=100
-epochnum=10
+batch_size=200
+epochnum=100
+
 #%%
-start,SampleNum,N=(0,40,1000)
+start,SampleNum,N=(0,40,100000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
@@ -151,15 +153,14 @@ X_train=X_train.reshape(N,SampleNum,12)
 generator= create_generator()
 discriminator= create_discriminator()
 gan = create_gan(discriminator, generator)
-#%%
-import wandb
-wandb.init()
+
 #%%
 
 def training(generator,discriminator,gan,epochs, batch_size):
     
     scale=1
     for e in range(1,epochs+1 ):
+        tik=time.clock()
         print("Epoch %d" %e)
         for _ in tqdm(range(batch_size)):
         #generate  random noise as an input  to  initialize the  generator
@@ -196,7 +197,8 @@ def training(generator,discriminator,gan,epochs, batch_size):
             #training  the GAN by alternating the training of the Discriminator 
             #and training the chained GAN model with Discriminator’s weights freezed.
             gan.train_on_batch(noise, y_gen)
-    toc = time.clock()
+        toc = time.clock()
+        print(toc-tik)
 
 #        if e == 1 or e % 5 == 0:
 #           
@@ -210,12 +212,17 @@ toc = time.clock()
 print(toc-tic)
 #%%
 
-gan.save('gan_mul_LSTM_N1000_e100_b10.h5')
-generator.save('generator_mul_LSTM_N1000_e100_b10.h5')
-discriminator.save('discriminator_mul_LSTM_N1000_e100_b10.h5')
+gan.save('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
+generator.save('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
+discriminator.save('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
-start,SampleNum,N=(0,40,500000)
+gan=load_model('GPU_gan_mul_LSTM_N1000_e100_b100.h5')
+generator=load_model('GPU_generator_mul_LSTM_N1000_e100_b100.h5')
+discriminator=load_model('GPU_discriminator_mul_LSTM_N1000_e100_b100.h5')
+#%%
+
+start,SampleNum,N=(0,40,10000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 
@@ -224,6 +231,9 @@ X_train=X_train.reshape(N,12*SampleNum)
 X_train=X_train.reshape(N,SampleNum,12)
 #%%
 a=discriminator.predict_on_batch(X_train)
+#%%
+probability_mean=np.mean(a)
+a=a-probability_mean
 
 #%%
 fig_size = plt.rcParams["figure.figsize"]
@@ -234,11 +244,28 @@ fig_size[0] = 8
 fig_size[1] = 6
 plt.plot(a.ravel())
 plt.show()
-
-
 #%%
-high=.94
-low=0.26
+
+data = a
+
+# Fit a normal distribution to the data:
+mu, std = norm.fit(data)
+
+# Plot the histogram.
+plt.hist(data, bins=25, density=True, alpha=0.6, color='g')
+
+# Plot the PDF.
+xmin, xmax = plt.xlim()
+x = np.linspace(xmin, xmax, 100)
+p = norm.pdf(x, mu, std)
+plt.plot(x, p, 'k', linewidth=2)
+title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
+plt.title(title)
+
+plt.show()
+#%%
+high=mu+3*std
+low=mu-3*std
 
 fig_size = plt.rcParams["figure.figsize"]
  
@@ -254,10 +281,12 @@ tt=X_train.reshape(N,12,SampleNum)
 
 normal=np.arange(100,110)
 for i in anoms :
+    print(i*int(SampleNum/2))
     for j in range(12):
         plt.plot(tt[i][j])
     plt.legend(('vol', 'curr', 'p','q'),shadow=True, loc=(0.01, 0.48), handlelength=1.5, fontsize=16)
     plt.show()
+    
 
 #%%
 selected=pd.DataFrame(selected)

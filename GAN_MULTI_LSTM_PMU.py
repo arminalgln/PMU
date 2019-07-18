@@ -34,7 +34,7 @@ def load_data(start,SampleNum,N):
     for pmu in ['1224']:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
     features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
-       'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC',]
+       'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC']
     
     select=[]
     for f in features:
@@ -217,9 +217,9 @@ generator.save('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
 discriminator.save('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
-gan=load_model('GPU_gan_mul_LSTM_N1000_e100_b100.h5')
-generator=load_model('GPU_generator_mul_LSTM_N1000_e100_b100.h5')
-discriminator=load_model('GPU_discriminator_mul_LSTM_N1000_e100_b100.h5')
+gan=load_model('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
+generator=load_model('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
+discriminator=load_model('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
 start,SampleNum,N=(0,40,10000)

@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 %matplotlib inline
 import keras
-from keras.layers import Dense, Dropout, Input
+from keras.layers import Dense, Dropout, Input, LSTM, CuDNNLSTM,Reshape
 from keras.models import Model,Sequential
 from keras.datasets import mnist
 from tqdm import tqdm
@@ -14,11 +14,14 @@ from keras.activations import relu
 from keras.optimizers import adam
 import numpy as np
 import tensorflow as tf
-import os
+
 import pickle
 import operator
 import math
+from sklearn import preprocessing
+from keras.models import load_model
 import time
+from scipy.stats import norm
 
 #%% 
 def load_data(start,SampleNum,N):
@@ -36,7 +39,7 @@ def load_data(start,SampleNum,N):
     
     select=preprocessing.scale(select,axis=1)
     
-    selected_data=0
+#    selected_data=0
     end=start+SampleNum
 
     shift=int(SampleNum/2)
@@ -137,7 +140,7 @@ epochnum=100
 
 #%%
 start,SampleNum,N=(0,40,2000)
-X_train, selected = load_data(start,SampleNum,N)
+X_train, selected, selected_data = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
 X_train=X_train.reshape(N,1*SampleNum)
@@ -216,7 +219,7 @@ discriminator=load_model('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
 start,SampleNum,N=(0,40,2000)
-X_train, selected = load_data(start,SampleNum,N)
+X_train, selected, selected_data = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 
 #%%
@@ -272,8 +275,8 @@ tt=X_train.reshape(N,1*SampleNum)
 tt=X_train.reshape(N,1,SampleNum)
 #%%
 
-normal=np.arange(100,110)
-for i in anoms :
+normal=np.arange(0,5)
+for i in normal :
     print(i*int(SampleNum/2))
     for j in range(1):
         plt.plot(tt[i][j])
@@ -307,8 +310,19 @@ markers_on=np.where(selected['color'].iloc[start:end]=='r')
 #for i in range(5):
 #    plt.plot(selected[i].iloc[start:end])
 #    plt.show()
-for j in [1]:
-    plt.plot(list(selected[j].iloc[start:end].values))
+
+plt.plot(list(selected[0].iloc[start:end].values))
+#    plt.xlabel('timeslots',fontsize=28)
+#    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
+for i in anoms:
+    if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
+        plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
+plt.show()
+
+    
+for j in ['L1MAG']:
+    print(j)
+    plt.plot(list(selected_data[j].iloc[start:end].values))
 #    plt.xlabel('timeslots',fontsize=28)
 #    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
     for i in anoms:

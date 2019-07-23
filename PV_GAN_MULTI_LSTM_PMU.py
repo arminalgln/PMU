@@ -28,7 +28,10 @@ from scipy.stats import norm
 #%% 
 def load_data(start,SampleNum,N):
          #read a pickle file
-    pkl_file = open('15minPVPMU.pkl', 'rb')
+    dir_name="data/sorted"
+    filename=os.listdir(dir_name)
+    path=os.path.join(dir_name,filename[3])
+    pkl_file = open(path, 'rb')
     selected_data = pickle.load(pkl_file)
     pkl_file.close()
     features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
@@ -40,9 +43,9 @@ def load_data(start,SampleNum,N):
     
     select=np.array(select)
     
-    select=preprocessing.scale(select,axis=1)
+#    select=preprocessing.scale(select,axis=1)
     
-    selected_data=0
+#    selected_data=0
     end=start+SampleNum
 
     shift=int(SampleNum/2)
@@ -62,9 +65,68 @@ def load_data(start,SampleNum,N):
     # convert shape of x_train from (60000, 28, 28) to (60000, 784) 
     # 784 columns per row
     
-    return train_data,select#,select_proc,reduced_mean
+    return train_data,select,selected_data
+#,select_proc,reduced_mean
 #X_train=load_data()
 #print(X_train.shape)
+#%%
+def load_data_manyfiles(start,SampleNum,N):
+         #read a pickle file
+    dir_name="data/sorted"
+    filename=os.listdir(dir_name)
+    
+    fnum=0
+    for file in filename:
+        
+        path=os.path.join(dir_name,file)
+        pkl_file = open(path, 'rb')
+        selected_data = pickle.load(pkl_file)
+        pkl_file.close()
+        features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
+           'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC']
+        
+        select=[]
+        for f in features:
+            select.append(selected_data[f].iloc[0:int(N*SampleNum/2)+20].values)
+        
+        select=np.array(select)
+        
+    #    select=preprocessing.scale(select,axis=1)
+        
+    #    selected_data=0
+        end=start+SampleNum
+    
+        shift=int(SampleNum/2)
+        
+        train_data=np.zeros((N,12,SampleNum))
+    #    reduced_mean=np.zeros((12,20))
+        for i in range(N):
+            if i% 1000==0:
+                print('iter num: %i', i)
+            temp=select[:,start+i*shift:end+i*shift] 
+            temp=(temp-temp.mean(axis=1).reshape(-1,1)) ## reduced mean
+    #        temp = preprocessing.scale(temp,axis=1)  ## standardized
+    #        reduced_mean=np.concatenate((reduced_mean,temp[:,0:20]),axis=1)
+            train_data[i,:]=temp
+
+        if fnum==0:
+            whole_selected=select
+            whole_train=train_data
+        else:
+            whole_selected=np.concatenate((whole_selected,select),axis=1)
+            whole_train=np.concatenate((whole_train,train_data),axis=0)
+        
+        fnum+=1
+    return whole_train,whole_selected
+#,select_proc,reduced_mean
+#X_train=load_data()
+#print(X_train.shape)
+    #%%
+start,SampleNum,N=(0,40,2000)
+X_train, selected = load_data_manyfiles(start,SampleNum,N)
+print(X_train.shape,selected.shape)
+
+
 #%%
 def adam_optimizer():
     return adam(lr=0.0002, beta_1=0.5)
@@ -137,10 +199,11 @@ def plot_generated_images(epoch, generator, examples=100, dim=(10,10), figsize=(
     return generated_images
     
 #%%
-batch_size=10
-epochnum=100
+batch_size=100
+epochnum=10
 
 #%%
+
 start,SampleNum,N=(0,40,2000)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
@@ -210,18 +273,18 @@ toc = time.clock()
 print(toc-tic)
 #%%
 
-gan.save('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
-generator.save('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
-discriminator.save('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
+gan.save('PV_GPU_gan_mul_LSTM_N2000_e100_b100.h5')
+generator.save('PV_GPU_generator_mul_LSTM_N2000_e100_b100.h5')
+discriminator.save('PV_GPU_discriminator_mul_LSTM_N2000_e100_b100.h5')
 #%%
 
-gan=load_model('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
-generator=load_model('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
-discriminator=load_model('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
+gan=load_model('PV_GPU_gan_mul_LSTM_N2000_e100_b100.h5')
+generator=load_model('PV_GPU_generator_mul_LSTM_N2000_e100_b100.h5')
+discriminator=load_model('PV_GPU_discriminator_mul_LSTM_N2000_e100_b100.h5')
 #%%
 
 start,SampleNum,N=(0,40,2000)
-X_train, selected = load_data(start,SampleNum,N)
+X_train, selected,selected_data = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 
 #%%
@@ -241,6 +304,10 @@ fig_size = plt.rcParams["figure.figsize"]
 fig_size[0] = 8
 fig_size[1] = 6
 plt.plot(a.ravel())
+plt.ylabel('Event score')
+plt.xlabel('training sample number')
+#plt.ylim([.85,.95])
+plt.savefig('probability score')
 plt.show()
 #%%
 
@@ -260,10 +327,12 @@ plt.plot(x, p, 'k', linewidth=2)
 title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
 plt.title(title)
 
+plt.savefig('normalpdfscore')
 plt.show()
 #%%
-high=mu+3*std
-low=mu-3*std
+stdnum=3
+high=mu+stdnum*std
+low=mu-stdnum*std
 
 fig_size = plt.rcParams["figure.figsize"]
  
@@ -313,6 +382,7 @@ markers_on=np.where(selected['color'].iloc[start:end]=='r')
 #    plt.plot(selected[i].iloc[start:end])
 #    plt.show()
 for j in [1,2,6,9]:
+    print(j)
     plt.plot(list(selected[j].iloc[start:end].values))
 #    plt.xlabel('timeslots',fontsize=28)
 #    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
@@ -320,6 +390,22 @@ for j in [1,2,6,9]:
         if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
             plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
     plt.show()
+
+    
+print('This is real ones')
+    
+
+    
+for j in ['L3MAG','C3MAG','PC','QC']:
+    print(j)
+    plt.plot(list(selected_data[j].iloc[start:end].values))
+#    plt.xlabel('timeslots',fontsize=28)
+#    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
+    for i in anoms:
+        if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
+            plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
+    plt.show()
+    
 #plt.savefig('long.pdf', format='pdf', dpi=1200)
 #plt.savefig('long %d.png' %dur)
 #%%
@@ -336,4 +422,91 @@ for i in anoms:
 
 print(dur_anoms)
 print(len(dur_anoms))
+
+#%%
+# =============================================================================
+# =============================================================================
+# # subplot
+# PMU
+# =============================================================================
+plt.subplot(2, 2, 1)
+plt.plot(list(selected_data['L1MAG'].values))
+plt.title('Real PMU data')
+plt.ylabel('Real Voltage')
+#plt.ylim([7100,7200])
+
+plt.subplot(2, 2, 2)
+plt.plot(list(selected_data['C1MAG'].values))
+#plt.xlabel('time')
+plt.ylabel('Real Current')
+#plt.ylim([1,2])
+
+plt.subplot(2, 2, 3)
+plt.plot(list(selected_data['PA'].values))
+#plt.title('Real PMU data')
+plt.ylabel('Real ACtive Power')
+plt.xlabel('time')
+#plt.ylim([7100,7200])
+
+plt.subplot(2, 2, 4)
+plt.plot(list(selected_data['QA'].values))
+#plt.title('Real PMU data')
+plt.ylabel('Real Reactive Power')
+plt.xlabel('time')
+#plt.ylim([7100,7200])
+
+plt.savefig('real.png')
+plt.show()
+#%%%
+ss=preprocessing.scale(selected_data,axis=0)
+plt.subplot(2, 2, 1)
+plt.plot(ss[:,0])
+plt.title('scaled PMU data')
+plt.ylabel('scaled Voltage')
+#plt.ylim([7100,7200])
+
+plt.subplot(2, 2, 2)
+plt.plot(ss[:,6])
+#plt.xlabel('time')
+plt.ylabel('scaled Current')
+#plt.ylim([1,2])
+
+plt.subplot(2, 2, 3)
+plt.plot(ss[:,13])
+#plt.title('scaled PMU data')
+plt.ylabel('scaled ACtive Power')
+plt.xlabel('time')
+#plt.ylim([7100,7200])
+
+plt.subplot(2, 2, 4)
+plt.plot(ss[:,16])
+#plt.title('scaled PMU data')
+plt.ylabel('scaled Reactive Power')
+plt.xlabel('time')
+#plt.ylim([7100,7200])
+plt.savefig('scale.png')
+plt.show()
+#plt.savefig('scale.png')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

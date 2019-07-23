@@ -144,6 +144,7 @@ epochnum=100
 
 #%%
 start,SampleNum,N=(0,40,100000)
+#X_train = load_data(start,SampleNum,N)
 X_train, selected = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 #%%
@@ -211,10 +212,10 @@ toc = time.clock()
 
 print(toc-tic)
 #%%
-
-gan.save('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
-generator.save('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
-discriminator.save('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
+#
+#gan.save('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
+#generator.save('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
+#discriminator.save('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
 gan=load_model('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
@@ -222,18 +223,31 @@ generator=load_model('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
 discriminator=load_model('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
 #%%
 
-start,SampleNum,N=(0,40,10000)
-X_train, selected = load_data(start,SampleNum,N)
-batch_count = X_train.shape[0] / batch_size
+start,SampleNum,N=(0,40,100000)
+X_train,selected = load_data(start,SampleNum,N)
+#batch_count = X_train.shape[0] / batch_size
 
 #%%
 X_train=X_train.reshape(N,12*SampleNum)
 X_train=X_train.reshape(N,SampleNum,12)
 #%%
 a=discriminator.predict_on_batch(X_train)
+
 #%%
-probability_mean=np.mean(a)
-a=a-probability_mean
+rate=100
+shift=N/rate
+scores=[]
+for i in range(rate-1):
+    temp=discriminator.predict_on_batch(X_train[int(i*shift):int((i+1)*shift)])
+    scores.append(temp)
+    print(i)
+
+scores=np.array(scores)
+scores=scores.ravel()
+#%%
+
+probability_mean=np.mean(scores)
+a=scores-probability_mean
 
 #%%
 fig_size = plt.rcParams["figure.figsize"]
@@ -280,7 +294,7 @@ tt=X_train.reshape(N,12,SampleNum)
 #%%
 
 normal=np.arange(100,110)
-for i in anoms :
+for i in anoms[0:100] :
     print(i*int(SampleNum/2))
     for j in range(12):
         plt.plot(tt[i][j])
@@ -301,26 +315,30 @@ fig_size[0] = 10
 fig_size[1] = 8
 plt.rcParams["figure.figsize"] = fig_size
 start=0
-dur=N*20
+dur=int(N*20)
 end=start+dur
-selected['color']='b'
-for i in anoms:
+#selected['color']='b'
+#for i in anoms:
 #    print(i)
-    selected['color'].iloc[i*int(SampleNum/2):((i+1)*int(SampleNum/2)+40)]='r'
-
-markers_on=np.where(selected['color'].iloc[start:end]=='r')
+##    print(i)
+#    selected['color'].iloc[i*int(SampleNum/2):((i+1)*int(SampleNum/2)+40)]='r'
+#
+#markers_on=np.where(selected['color'].iloc[start:end]=='r')
 #plt.plot(selected[0].iloc[start:end], markevery=list(markers_on),marker='X',mec='r',mew=np.log(np.log(dur))
 #    ,ms=2*np.log(np.log(dur)),mfcalt='r')
 #for i in range(5):
 #    plt.plot(selected[i].iloc[start:end])
 #    plt.show()
-for j in [1,2,6,9]:
-    plt.plot(selected[j].iloc[start:end])
+for j in [0,3,6,9]:
+    plt.plot(selected[j][start:end])
 #    plt.xlabel('timeslots',fontsize=28)
 #    plt.ylabel('phase 1 current magnitude pmu="1024"',fontsize=28)
     for i in anoms:
+#        print(i)
         if (i*int(SampleNum/2)+1) in list(np.arange(start,end)):
             plt.axvspan(i*int(SampleNum/2), ((i+1)*int(SampleNum/2)+40), color='red', alpha=0.5)
+    plt.savefig('day %d.pdf' %j, format='pdf', dpi=1200)
+    plt.savefig('day %d.png' %j)
     plt.show()
 #plt.savefig('long.pdf', format='pdf', dpi=1200)
 #plt.savefig('long %d.png' %dur)

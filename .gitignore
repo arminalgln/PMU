@@ -22,6 +22,7 @@ data/
 *.pdf
 *.html
 *.mat
+*.pkl
 
 # Packages #
 ############

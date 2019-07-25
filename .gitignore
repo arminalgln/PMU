@@ -23,6 +23,7 @@ data/
 *.html
 *.mat
 *.pkl
+*.csv
 
 # Packages #
 ############

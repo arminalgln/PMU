@@ -21,11 +21,11 @@ import math
 # =============================================================================
 
 # whole data filenames in the data directory
-filenames=os.listdir("data/2hour")
+filenames=os.listdir("data/jul 1")
 #%%
 # importing data from a file function
 def OneFileImport(filename):
-    dir_name="data/2hour"
+    dir_name="data/jul 1"
     base_filename=filename
     path=os.path.join(dir_name, base_filename)
     imported_data=pd.read_csv(path,header=None, error_bad_lines=False)

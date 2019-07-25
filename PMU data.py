@@ -154,6 +154,57 @@ pkl_file = open('CompleteOneDay.pkl', 'rb')
 selected_data = pickle.load(pkl_file)
 pkl_file.close()
 
+#%%
 
-        
+# =============================================================================
+# =============================================================================
+# # it gets a vector which is a voltage angle of one phase and it will return frequancy diffrence in each time
+# =============================================================================
+# =============================================================================
+def frequency(angle,span):
     
+    span=40
+    for i in range(int(angle.shape[0]/span)):
+    selected_angle=angle[i*span:i*(span)]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return df
+    
+#%%
+def P2R(r, angles):
+    return r * np.exp(1j*angles)
+
+def R2P(x):
+    return abs(x), angle(x)
+#%%
+r=selected_data['L1MAG'][11500:12000]
+ang=(selected_data['L1ANG'][11500:12000]+180)*(2*np.pi/180)
+v=P2R(r,ang)
+p=selected_data['PA'][11500:12000]
+vrated=7200
+r=r/vrated
+#%%
+mat=[np.ones(r.shape[0]),r,r**2]
+
+mat=np.array(mat).transpose()
+#%%
+a=np.linalg.lstsq(mat,p)
+coeff=a[0]
+#%%
+pgen=np.matmul(mat,coeff)
+plt.plot(np.absolute(pgen))
+plt.plot(np.absolute(list(p.values)))
+plt.show()

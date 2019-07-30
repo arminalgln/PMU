@@ -277,9 +277,9 @@ toc = time.clock()
 print(toc-tic)
 #%%
 
-gan.save('PV_GPU_gan_mul_LSTM_N2000_e100_b100.h5')
-generator.save('PV_GPU_generator_mul_LSTM_N2000_e100_b100.h5')
-discriminator.save('PV_GPU_discriminator_mul_LSTM_N2000_e100_b100.h5')
+gan.save('PV_GPU_gan_mul_2LSTM_N100000_e100_b10.h5')
+generator.save('PV_GPU_generator_mul_2LSTM_N100000_e100_b10.h5')
+discriminator.save('PV_GPU_discriminator_mul_2LSTM_N100000_e100_b10.h5')
 #%%
 
 gan=load_model('PV_GPU_gan_mul_LSTM_N2000_e100_b100.h5')
@@ -345,7 +345,7 @@ plt.title(title)
 plt.savefig('normalpdfscore')
 plt.show()
 #%%
-stdnum=3
+stdnum=3.5
 high=mu+stdnum*std
 low=mu-stdnum*std
 

@@ -31,15 +31,15 @@ def load_data(start,SampleNum,N):
     pkl_file = open('CompleteOneDay.pkl', 'rb')
     selected_data = pkl.load(pkl_file)
     pkl_file.close()
-    for pmu in ['1224']:
+    for pmu in ['1225']:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
     features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
        'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC']
     
-    
+    print(selected_data.keys())
     select=[]
     for f in features:
-        select.append(selected_data['1224'][f].values)
+        select.append(selected_data[pmu][f])
     
     
     selected_data=0
@@ -50,7 +50,6 @@ def load_data(start,SampleNum,N):
     
 #    selected_data=0
     end=start+SampleNum
-    pmu='1224'
     shift=int(SampleNum/2)
     
     train_data=np.zeros((N,12,SampleNum))
@@ -84,7 +83,7 @@ def load_real_data(filename):
     pkl_file.close()
     selected_data=pd.DataFrame(selected_data)
     selected_data=selected_data.fillna(method='ffill')
-
+    print(selected_data.keys())
     data=selected_data[pmu]
     features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
        'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC']
@@ -185,7 +184,7 @@ def training(generator,discriminator,gan,epochs, batch_size):
         print("Epoch %d" %e)
         for _ in tqdm(range(batch_size)):
         #generate  random noise as an input  to  initialize the  generator
-            noise= scale*np.random.normal(0,.1, [batch_size, 100])
+            noise= scale*np.random.normal(0,1, [batch_size, 100])
             noise=noise.reshape(batch_size,100,1)
             # Generate fake MNIST images from noised input
             generated_images = generator.predict(noise)
@@ -233,18 +232,18 @@ toc = time.clock()
 print(toc-tic)
 #%%
 #
-gan.save('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b100.h5')
-generator.save('GPU_generator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
-discriminator.save('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
+gan.save('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
+generator.save('GPU_generator_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
+discriminator.save('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
 #%%
 
-gan=load_model('GPU_gan_mul_LSTM_N100000_e100_b200.h5')
-generator=load_model('GPU_generator_mul_LSTM_N100000_e100_b200.h5')
-discriminator=load_model('GPU_discriminator_mul_LSTM_N100000_e100_b200.h5')
+gan=load_model('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b100.h5')
+generator=load_model('GPU_generator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
+discriminator=load_model('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
 #%%
 
-start,SampleNum,N=(0,40,100000)
-X_train,selected ,selected_data= load_data(start,SampleNum,N)
+start,SampleNum,N=(0,40,500000)
+X_train= load_data(start,SampleNum,N)
 #batch_count = X_train.shape[0] / batch_size
 
 #%%
@@ -256,20 +255,20 @@ a=discriminator.predict_on_batch(X_train)
 #%%
 rate=1000
 shift=N/rate
-scores=[]
+scores_1225=[]
 for i in range(rate-1):
     temp=discriminator.predict_on_batch(X_train[int(i*shift):int((i+1)*shift)])
-    scores.append(temp)
+    scores_1225.append(temp)
     print(i)
 
-scores=np.array(scores)
-scores=scores.ravel()
+scores_1225=np.array(scores_1225)
+scores_1225=scores_1225.ravel()
 #%%
 
 #%%
 
-probability_mean=np.mean(scores)
-a=scores-probability_mean
+probability_mean=np.mean(scores_1225)
+a=scores_1225-probability_mean
 
 #%%
 fig_size = plt.rcParams["figure.figsize"]
@@ -298,6 +297,7 @@ plt.plot(x, p, 'k', linewidth=2)
 title = "Fit results: mu = %.2f,  std = %.2f" % (mu, std)
 plt.title(title)
 
+
 plt.show()
 #%%
 zp=3
@@ -311,7 +311,7 @@ fig_size = plt.rcParams["figure.figsize"]
 # Set figure width to 12 and height to 9
 fig_size[0] = 8
 fig_size[1] = 6
-anoms=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
+anoms_1225=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
 print(np.union1d(np.where(a>=high)[0], np.where(a<=low)[0]).shape)
 #tt=X_train.reshape(N,12*SampleNum)
 #tt=X_train.reshape(N,12,SampleNum)
@@ -330,15 +330,15 @@ for i in range(1700):
     zp=(i/10)+3
     high=mu+zp*std
     low=mu-zp*std
-    anoms=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
-    zpnum.append(anoms.shape[0])
-    shape.append(anoms.shape[0])
+    anoms_1225=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
+    zpnum.append(anoms_1225.shape[0])
+    shape.append(anoms_1225.shape[0])
     mn=0
     keep=[]
-    if not anoms.shape[0]==0:
+    if not anoms_1225.shape[0]==0:
         maxx=0
         minn=100
-        for anom in anoms:
+        for anom in anoms_1225:
             mnanom=0
             for k in range(9):    
                 vmr=ss[k][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)]-np.mean(ss[0][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
@@ -358,12 +358,13 @@ for i in range(1700):
         maxmin[i][3]=indxmin
         
         mnalpha=mn/zp
-        mn=mn/anoms.shape[0]
+        mn=mn/anoms_1225.shape[0]
     avg.append(mnalpha)   
     entropy.append(mn)
-    of.append(mn+np.sqrt(anoms.shape[0]))
-    ofn.append(mn+(anoms.shape[0]))
-plt.plot(entropy)plt.show()
+    of.append(mn+np.sqrt(anoms_1225.shape[0]))
+    ofn.append(mn+(anoms_1225.shape[0]))
+plt.plot(entropy)
+plt.show()
 plt.plot(of)
 plt.show()
 plt.plot(ofn)
@@ -382,7 +383,7 @@ plt.show()
 #%%
 
 normal=np.arange(100,110)
-for i in anoms[0:100] :
+for i in anoms_1225[0:100] :
     print(i*int(SampleNum/2))
     for j in range(12):
         plt.plot(tt[i][j])
@@ -391,36 +392,38 @@ for i in anoms[0:100] :
     
 #%%
     
-select=load_real_data(filename)
+select_1225=load_real_data(filename)
 #%%
-
-for anom in anoms:
+dst="figures/1225_100_batch_anoms"
+os.mkdir(dst)
+#%%
+for anom in anoms_1225:
     print(anom)
     
     plt.subplot(221)
     for i in [0,1,2]:
-        plt.plot(select[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
+        plt.plot(select_1225[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C')
     plt.title('V')
         
     plt.subplot(222)
     for i in [3,4,5]:
-        plt.plot(select[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
+        plt.plot(select_1225[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C')
     plt.title('I')  
     
     plt.subplot(223)
     for i in [6,7,8]:
-        plt.plot(select[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
+        plt.plot(select_1225[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C') 
     plt.title('P')    
     
     plt.subplot(224)
     for i in [9,10,11]:
-        plt.plot(select[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
+        plt.plot(select_1225[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C')
     plt.title('Q')    
-    plt.savefig('figures/1224 two layer/anom %d.png' %anom)
+    plt.savefig('figures/1225_100_batch_anoms/anom %d.png' %anom)
     plt.show()
     print(a[int(anom)])
     
@@ -440,7 +443,7 @@ start=0
 dur=int(N*20)
 end=start+dur
 #selected['color']='b'
-#for i in anoms:
+#for i in anoms_1224:
 #    print(i)
 ##    print(i)
 #    selected['color'].iloc[i*int(SampleNum/2):((i+1)*int(SampleNum/2)+40)]='r'
@@ -478,4 +481,107 @@ for i in anoms:
 
 print(dur_anoms)
 print(len(dur_anoms))
+#%%
+# =============================================================================
+# =============================================================================
+# # mutual events 1224, 1225
+# =============================================================================
+# =============================================================================
+anom1224=os.listdir('figures/1224 two layer/')
+anom1225=os.listdir('figures/1225_100_batch_anoms')
+#%%
+a1224=[]
+for i in anom1224:
+    a1224.append(i.split(' ')[1].split('.')[0])
 
+a1224=[int(i) for i in a1224]
+a1224=np.array(a1224)
+
+a1225=[]
+for i in anom1225:
+    a1225.append(i.split(' ')[1].split('.')[0])
+
+a1225=[int(i) for i in a1225]
+
+a1225=[int(i) for i in a1225]
+a1225=np.array(a1225)
+#%%
+# =============================================================================
+# =============================================================================
+# # copy mutual timeslots
+# =============================================================================
+# =============================================================================
+dst="figures/1225mutual"
+os.mkdir(dst)
+for i in intersect:
+    dir_name="figures/1225 two layer/"
+    src=os.path.join(dir_name,i)
+    shutil.copy(src, dst, follow_symlinks=True)
+    #%%
+select=load_real_data(filename)
+    #%%
+intersection1224_1225=np.intersect1d(a1224,a1225)
+#dst="figures/1225mutual1000_100"
+#os.mkdir(dst)
+for anom in intersection1224_1225:
+    print(anom)
+    
+    plt.subplot(221)
+    for i in [0,1,2]:
+        plt.plot(select_1225[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('V')
+        
+    plt.subplot(222)
+    for i in [3,4,5]:
+        plt.plot(select_1225[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('I')  
+    
+    plt.subplot(223)
+    for i in [6,7,8]:
+        plt.plot(select_1225[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C') 
+    plt.title('P')    
+    
+    plt.subplot(224)
+    for i in [9,10,11]:
+        plt.plot(select_1225[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('Q')
+    plt.savefig('figures/1225mutual1000_100/%d.png' %anom)
+    plt.show()
+    print(a[int(anom)])
+ #%%   
+intersection1224_1225=np.intersect1d(a1224,a1225)
+dst="figures/1224mutual1000_100"
+os.mkdir(dst)
+for anom in intersection1224_1225:
+    print(anom)
+    
+    plt.subplot(221)
+    for i in [0,1,2]:
+        plt.plot(select[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('V')
+        
+    plt.subplot(222)
+    for i in [3,4,5]:
+        plt.plot(select[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('I')  
+    
+    plt.subplot(223)
+    for i in [6,7,8]:
+        plt.plot(select[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C') 
+    plt.title('P')    
+    
+    plt.subplot(224)
+    for i in [9,10,11]:
+        plt.plot(select[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
+    plt.legend('A' 'B' 'C')
+    plt.title('Q')    
+    plt.savefig('figures/1224mutual1000_100/%d.png' %anom)
+    plt.show()
+    print(a[int(anom)])

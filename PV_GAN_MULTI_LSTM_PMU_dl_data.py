@@ -288,6 +288,7 @@ discriminator=load_model('PV_GPU_discriminator_mul_LSTM_N2000_e100_b100.h5')
 #%%
 
 start,SampleNum,N=(0,40,2000)
+#%%
 X_train, selected,selected_data = load_data(start,SampleNum,N)
 batch_count = X_train.shape[0] / batch_size
 

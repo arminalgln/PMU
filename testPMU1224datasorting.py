@@ -129,9 +129,12 @@ for n in np.arange(4,18):
         day_data['1224'][key]=whole_data[:,c]
         c+=1
         
-    
-    #dir_name="data/Armin_Data/July_03/pkl"
-    #os.mkdir(dir_name)
+    if n<10:
+        dir="data/Armin_Data/July_0"+str(n)+"/pkl"
+    else:
+        dir="data/Armin_Data/July_"+str(n)+"/pkl"
+    dir_name=dir
+    os.mkdir(dir_name)
         # write python dict to a file
     if n<10:
         dir="data/Armin_Data/July_0"+str(n)+"/pkl/jul" + str(n) + ".pkl"

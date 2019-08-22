@@ -31,7 +31,7 @@ def load_data(start,SampleNum,N):
     pkl_file = open('CompleteOneDay.pkl', 'rb')
     selected_data = pkl.load(pkl_file)
     pkl_file.close()
-    for pmu in ['1225']:
+    for pmu in ['1224']:
         selected_data[pmu]=pd.DataFrame.from_dict(selected_data[pmu])
     features=['L1MAG','L2MAG', 'L3MAG','C1MAG',
        'C2MAG', 'C3MAG', 'PA', 'PB', 'PC', 'QA', 'QB', 'QC']
@@ -137,6 +137,8 @@ def create_discriminator():
 #       
 #    discriminator.add(LSTM(units=256))
 #    discriminator.add(LeakyReLU(0.2))
+    discriminator.add(Dense(units=20))
+    discriminator.add(LeakyReLU(0.2))
     
     discriminator.add(Dense(units=1, activation='sigmoid'))
     
@@ -159,7 +161,7 @@ gan.summary()
 
 #%%
 batch_size=100
-epochnum=1000
+epochnum=100
 
 #%%
 start,SampleNum,N=(0,40,500000)
@@ -232,9 +234,9 @@ toc = time.clock()
 print(toc-tic)
 #%%
 #
-gan.save('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
-generator.save('GPU_generator_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
-discriminator.save('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b10_1225.h5')
+gan.save('GPU_gan_mul_LSTM_twolayer_N500000_e100_b10_1224_latent20.h5')
+generator.save('GPU_generator_mul_LSTM_twolayer_N500000_e100_b10_1224_latent20.h5')
+discriminator.save('GPU_discriminator_mul_LSTM_twolayer_N500000_e100_b10_1224_latent20.h5')
 #%%
 
 gan=load_model('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b100.h5')
@@ -300,7 +302,7 @@ plt.title(title)
 
 plt.show()
 #%%
-zp=3
+zp=9
 
 high=mu+zp*std
 low=mu-zp*std
@@ -423,7 +425,7 @@ for anom in anoms_1225:
         plt.plot(select_1225[i][anom*int(SampleNum/2):(anom*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C')
     plt.title('Q')    
-    plt.savefig('figures/1225_100_batch_anoms/anom %d.png' %anom)
+#    plt.savefig('figures/1225_100_batch_anoms/anom %d.png' %anom)
     plt.show()
     print(a[int(anom)])
     
@@ -549,7 +551,7 @@ for anom in intersection1224_1225:
         plt.plot(select_1225[i][(anom-4)*int(SampleNum/2):((anom+4)*int(SampleNum/2)+40)])
     plt.legend('A' 'B' 'C')
     plt.title('Q')
-    plt.savefig('figures/1225mutual1000_100/%d.png' %anom)
+#    plt.savefig('figures/1225mutual1000_100/%d.png' %anom)
     plt.show()
     print(a[int(anom)])
  #%%   

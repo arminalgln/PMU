@@ -25,7 +25,11 @@ from keras.models import load_model
 import time
 from scipy.stats import norm
 from scipy.io import loadmat
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples, silhouette_score
 
+from dtw import dtw
+from fastdtw import fastdtw
 #%% 
    
 # =============================================================================
@@ -34,7 +38,7 @@ from scipy.io import loadmat
 # =============================================================================
 # =============================================================================
 #filename='data/Armin_Data/July_03/pkl/jul3.pkl'
-def load_real_data(filename):
+def load_standardized_data(filename):
          #read a pickle file
          
     pmu='1224'
@@ -111,173 +115,146 @@ for file in files:
 # =============================================================================
 # make a place to save all 1224 events data wrt each day, whether my method or Alirezas
 # =============================================================================
-dst="figures/1224_15_days"
-os.mkdir(dst)
+
 #%%
-for file in ['July_14']:
-    if file == 'July_03':
-        continue
-# =============================================================================
-#     extract train data for the selected day
-# =============================================================================
-    print(file)
-    start,SampleNum,N=(0,40,500000)
-    dir="data/Armin_Data/"+ file + "/pkl/"
+data_files=os.listdir('data/Armin_Data')
+event_points={}
+start,SampleNum,N=(0,40,500000)
+for day in anomalies:
+    print(day)
+    anoms=anomalies[day]
+    dir="data/Armin_Data/"+ day + "/pkl/"
     selectedfile=os.listdir(dir)[0]
     filename = dir + selectedfile
-    X_train= load_data(start,SampleNum,N,filename)
-    #batch_count = X_train.shape[0] / batch_size
-    
-    X_train=X_train.reshape(N,12*SampleNum)
-    X_train=X_train.reshape(N,SampleNum,12)
+    select_1224=load_standardized_data(filename)
+    event_points[day]={}
+    for anom in anoms:
+        anom=int(anom)
+        event_points[day][anom]=select_1224[0:12,anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)]
+#%%
 # =============================================================================
-#     calculate the score for the selected day
 # =============================================================================
-    #a=discriminator.predict_on_batch(X_train)
-    rate=1000
-    shift=N/rate
-    scores=[]
-    for i in range(rate-1):
-        temp=discriminator.predict_on_batch(X_train[int(i*shift):int((i+1)*shift)])
-        scores.append(temp)
-        print(i)
-    
-    scores=np.array(scores)
-    scores=scores.ravel()
+# #         save the anomalies standardized data for 15 days
+# =============================================================================
+# =============================================================================
+anomcsvfile="data/Armin_Data/anomsknnformat.pkl"
+output = open(anomcsvfile, 'wb')
+pkl.dump(event_points, output)
+output.close()
+#%%
+anomcsvfile="data/Armin_Data/anomsknnformat.pkl"
+pkl_file = open(anomcsvfile, 'rb')
+event_points = pkl.load(pkl_file)
+pkl_file.close()
+#%%
+X=[]
+for day in event_points:
+    for event in event_points[day]:
+        X.append(event_points[day][event].ravel())
+X=np.array(X)
+#%%
+kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
+#%%
 
+for n_clusters in np.arange(10,40):
+    clusterer = KMeans(n_clusters=n_clusters, random_state=10)
+    cluster_labels = clusterer.fit_predict(X)
+    silhouette_avg = silhouette_score(X, cluster_labels)
+    print("For n_clusters =", n_clusters,
+          "The average silhouette_score is :", silhouette_avg)
 
-    probability_mean=np.mean(scores)
-    a=scores-probability_mean
-
-# =============================================================================
-# obtain the boundaries for events
-# =============================================================================
-    zp=3
-    
-    data = a
-# Fit a normal distribution to the data:
-    mu, std = norm.fit(data)
-    
-    high=mu+zp*std
-    low=mu-zp*std
-    
-    anoms_1224=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
-    print(anoms_1224.shape)
-# =============================================================================
-# select the real data for the day
-# =============================================================================
-    select_1224=load_real_data(filename)
-# =============================================================================
-# make file to save photos for the GAN model
-# =============================================================================
-    dst="figures/1224_15_days/"+file
-    os.mkdir(dst)
-    dst=dst+"/GAN"
-    os.mkdir(dst)
-# =============================================================================
-#     save training number period as an events
-# =============================================================================
-    anomcsvfile=dst+"/anoms_"+file+".csv"
-    np.savetxt(anomcsvfile, anoms_1224, delimiter=",")
-    
-    event_points=[]
-    for anom in anoms_1224:
-        print(anom)
+#%%
+#pkl_file = open(anomcsvfile, 'rb')
+#test = pkl.load(pkl_file)
+#pkl_file.close()
+#%%
+similarity_matrix=[]
+similarity_scores={}
+tik=time.clock()
+for day1 in event_points:
+    similarity_scores[day1]={}
+    print(day1)
+    for anom1 in event_points[day1]:
+        print(anom1)
+        temp_similarity=[]
         
-        plt.subplot(221)
-        for i in [0,1,2]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('V')
+        similarity_scores[day1][anom1]={}
+        
+        x1=event_points[day1][anom1][::3]-np.mean(event_points[day1][anom1][::3],axis=1).reshape(4,1)
+        x1=x1.ravel()
+        
+        for day2 in event_points:
+            print(day2)
+            similarity_scores[day1][anom1][day2]={}
             
-        plt.subplot(222)
-        for i in [3,4,5]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('I')  
+            for anom2 in event_points[day2]:
+                print(anom2)
+                x2=event_points[day2][anom2][::3]-np.mean(event_points[day2][anom2][::3],axis=1).reshape(4,1)
+                x2=x2.ravel()
+
+#        plt.plot(event_points['July_10'][i][0]-np.mean(event_points['July_10'][i][0]))
+#        plt.plot(event_points['July_10'][j][0]-np.mean(event_points['July_10'][j][0]))
+#        plt.show()
+                d, path = fastdtw(x1, x2, dist=euclidean_norm)
+                print(d)
+                similarity_scores[day1][anom1][day2][anom2]=d
+                temp_similarity.append(d)
+                
+        temp_similarity=np.array(temp_similarity)
+        similarity_matrix.append(temp_similarity)
+similarity_matrix=np.array(similarity_matrix)
+toc = time.clock()
+print(toc-tik)
+time_4features=toc-tik
+#        print(d)
+#        plt.imshow(acc_cost_matrix.T, origin='lower', cmap='gray', interpolation='nearest')
+#        plt.plot(path[0], path[1], 'w')
+#        plt.show()
+#        print('...........................................................')
+#%%
+fft_scores={}
+total_events=0
+for day1 in event_points:
+    fft_scores[day1]={}
+#    print(day1)
+
+    for count,anom1 in enumerate(event_points[day1]):
+#        print(anom1)
+        total_events+=1
+        x1=event_points[day1][anom1][::3]-np.mean(event_points[day1][anom1][::3],axis=1).reshape(4,1)      
         
-        plt.subplot(223)
-        for i in [6,7,8]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
-        plt.legend('A' 'B' 'C') 
-        plt.title('P')    
+        fft_scores[day1][anom1]=np.concatenate((np.fft.fftn(x1)[:,0:120].real.ravel(),np.fft.fftn(x1)[:,0:120].imag.ravel()),axis=None)
+
         
-        plt.subplot(224)
-        for i in [9,10,11]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('Q')    
-        figname=dst+"/"+str(anom)
-        plt.savefig(figname)
+        if count% 500==0:
+            print('iter num: %count', count)
+print(total_events)
+anomcsvfile="data/Armin_Data/fftscores.pkl"
+output = open(anomcsvfile, 'wb')
+pkl.dump(fft_scores, output)
+output.close()
+#%%%
+for day1 in ['July_03']:
+    similarity_scores[day1]={}
+    print(day1)
+    for anom1 in event_points[day1]:
+        temp_similarity=[]
+        print(anom1)
+        similarity_scores[day1][anom1]={}
+        
+        x1=event_points[day1][anom1][::3]-np.mean(event_points[day1][anom1][::3],axis=1).reshape(4,1)
+        x1=x1[3]
+        ff=np.fft.fft(x1)
+        freq = np.fft.fftfreq(x1.shape[-1])
+        
+        widths = np.arange(1, 240)
+        cwtmatr = signal.cwt(x1, signal.ricker,widths)
+        plt.subplot(131)
+        plt.plot(freq, ff.real, freq, ff.imag)
+        plt.subplot(132)
+        plt.plot(x1)
+        plt.subplot(133)
+        plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
+              vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
         plt.show()
-# =============================================================================
-# find the wide range of anomalies point to compare with Alirezas data    
-# =============================================================================
-        low=anom*20-120
-        high=anom*20+120
-        rng=np.arange(low,high)
-        event_points.append(rng)
-    event_points=np.array(event_points).ravel()
-    
 
-
-    # =============================================================================
-    # =============================================================================
-    # # read pointers from matlab file: (Alireza's results)
-    # =============================================================================
-    # =============================================================================
-    
-    pointers = loadmat('data/pointer.mat')
-    pf='Jul'+"_"+file.split('_')[1]
-    points=pointers['pointer'][pf][0][0].ravel()
-    points.sort()
-    
-    
-# =============================================================================
-# common anomalies GAN and window
-# =============================================================================
-    common_anoms=np.intersect1d(points,event_points)
-    dst="figures/1224_15_days/"+file
-    anomcsvfile=dst+"/common"+file+".csv"
-    np.savetxt(anomcsvfile, common_anoms, delimiter=",")
-# =============================================================================
-# make folder to save Alirezas event in the same day
-# =============================================================================
-    dst="figures/1224_15_days/"+file
-    dst=dst+"/window"
-    os.mkdir(dst)
-# =============================================================================
-#     save the window method event points
-# =============================================================================
-    anomcsvfile=dst+"/anoms_"+file+".csv"
-    np.savetxt(anomcsvfile, points, delimiter=",")
-
-    for anom in points:
-        print(anom)
-        
-        plt.subplot(221)
-        for i in [0,1,2]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('V')
-            
-        plt.subplot(222)
-        for i in [3,4,5]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('I')  
-        
-        plt.subplot(223)
-        for i in [6,7,8]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
-        plt.legend('A' 'B' 'C') 
-        plt.title('P')    
-        
-        plt.subplot(224)
-        for i in [9,10,11]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
-        plt.legend('A' 'B' 'C')
-        plt.title('Q')    
-        figname=dst+"/"+str(anom)
-        plt.savefig(figname)
-        plt.show()

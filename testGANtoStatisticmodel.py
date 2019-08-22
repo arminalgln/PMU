@@ -33,7 +33,7 @@ from scipy.io import loadmat
 # # train data prepreation
 # =============================================================================
 # =============================================================================
-#filename='data/Armin_Data/July_03/pkl/jul3.pkl'
+filename='data/Armin_Data/July_03/pkl/jul3.pkl'
 def load_data(start,SampleNum,N,filename):
          #read a pickle file
     pkl_file = open(filename, 'rb')

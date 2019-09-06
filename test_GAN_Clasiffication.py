@@ -30,6 +30,7 @@ from sklearn.metrics import silhouette_samples, silhouette_score
 
 from dtw import dtw
 from fastdtw import fastdtw
+import time
 #%% 
    
 # =============================================================================
@@ -95,6 +96,130 @@ def load_real_data(filename):
     
     return select
 
+    #%%
+filename='data/Armin_Data/July_03/pkl/jul3.pkl'
+select_1224=load_real_data(filename)
+#%%
+start,SampleNum,N=(0,40,500000)
+group={}
+group['0']=[]
+group['1']=[]
+for window in range(N):
+    if window>=0:
+        print(window)
+            
+        
+        plt.subplot(221)
+        for i in [0,1,2]:
+            plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+        plt.legend('A' 'B' 'C')
+        plt.title('V')
+            
+        plt.subplot(222)
+        for i in [3,4,5]:
+            plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+        plt.legend('A' 'B' 'C')
+        plt.title('I')  
+        
+        plt.subplot(223)
+        for i in [6,7,8]:
+            plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+        plt.legend('A' 'B' 'C') 
+        plt.title('P')    
+        
+        plt.subplot(224)
+        for i in [9,10,11]:
+            plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+        plt.legend('A' 'B' 'C')
+        plt.title('Q')    
+        plt.show()
+        
+        gr=input("which group?:   ")
+        
+        if not gr in group:
+            print('wrong')
+            gr=input("which group?:   ")
+            group[gr].append(window)
+        else:
+            group[gr].append(window)
+#%%
+import _thread
+import threading
+start,SampleNum,N=(0,40,500000)
+eventwindow=[]
+#group['0']=[]
+#group['1']=[]
+thresh=427104
+while thresh<500000:
+    try:
+        for window in range(N):
+            if window>=thresh:
+                print(window)
+                    
+                
+                plt.subplot(221)
+                for i in [0,1,2]:
+                    plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+                plt.legend('A' 'B' 'C')
+                plt.title('V')
+                    
+                plt.subplot(222)
+                for i in [3,4,5]:
+                    plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+                plt.legend('A' 'B' 'C')
+                plt.title('I')  
+                
+                plt.subplot(223)
+                for i in [6,7,8]:
+                    plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+                plt.legend('A' 'B' 'C') 
+                plt.title('P')    
+                
+                plt.subplot(224)
+                for i in [9,10,11]:
+                    plt.plot(select_1224[i][window*int(SampleNum/2):(window*int(SampleNum/2)+40)])
+                plt.legend('A' 'B' 'C')
+                plt.title('Q')    
+                plt.show()
+#                time.sleep(1)
+    except KeyboardInterrupt:
+        window=input("which group?:   ")
+        
+        eventwindow.append(int(window))
+        thresh=int(window)
+                
+        real_event="data/Armin_Data/eventwindowbyhand.pkl"
+        output = open(real_event, 'wb')
+        pkl.dump(eventwindow, output)
+        output.close()
+#%%
+pkl_file = open(real_event, 'rb')
+real_event = pkl.load(pkl_file)
+pkl_file.close()
+        
+#%%
+import signal
+def interrupted(signum, frame):
+    print("Timeout!")
+signal.signal(signal.SIGALRM, interrupted)
+signal.alarm(5)
+try:
+    s = input("::>")
+except:
+    print("You are interrupted.")
+signal.alarm(0)
+#%%
+        
+real_event="data/Armin_Data/categories.pkl"
+output = open(real_event, 'wb')
+pkl.dump(group, output)
+output.close()
+#%%
+pkl_file = open(real_event, 'rb')
+real_event = pkl.load(pkl_file)
+pkl_file.close()
+    
+
 #%%
 # =============================================================================
 # Reading the files in the data to make a for
@@ -103,14 +228,15 @@ files=os.listdir('figures/1224_15_days/')
 #%%
 anomalies={}
 for file in files:
-    dir='figures/1224_15_days/'
-    dir=dir+file+"/GAN"
-    tempfiles=os.listdir(dir)
-    for f in tempfiles:
-        if f.endswith(".csv"):
-            anomfile=dir+'/'+f
-            ta=pd.read_csv(anomfile)
-            anomalies[file]=ta.values
+    if not file.endswith(".txt"):
+        dir='figures/1224_15_days/'
+        dir=dir+file+"/GAN"
+        tempfiles=os.listdir(dir)
+        for f in tempfiles:
+            if f.endswith(".csv"):
+                anomfile=dir+'/'+f
+                ta=pd.read_csv(anomfile)
+                anomalies[file]=ta.values
 #%%
 # =============================================================================
 # make a place to save all 1224 events data wrt each day, whether my method or Alirezas
@@ -131,17 +257,152 @@ for day in anomalies:
     for anom in anoms:
         anom=int(anom)
         event_points[day][anom]=select_1224[0:12,anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)]
+        
+        #%%
+        
+eventpointsfile="data/Armin_Data/event_hand_standardized.pkl"
+#%%
+output = open(eventpointsfile, 'wb')
+pkl.dump(event_points, output)
+output.close()
+#%%
+pkl_file = open(eventpointsfile, 'rb')
+event_points = pkl.load(pkl_file)
+pkl_file.close()
+#%%
+        
+# =============================================================================
+# =============================================================================
+# #         classifying first day events by hand
+# =============================================================================
+# =============================================================================
+group={}
+#%%
+for event in event_points['July_03']:
+    if event>0:
+        print(event)
+            
+        plt.subplot(221)
+        for i in [0,1,2]:
+            plt.plot(event_points['July_03'][event][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('V')
+            
+        plt.subplot(222)
+        for i in [3,4,5]:
+            plt.plot(event_points['July_03'][event][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('I')  
+        
+        plt.subplot(223)
+        for i in [6,7,8]:
+            plt.plot(event_points['July_03'][event][i])
+        plt.legend('A' 'B' 'C') 
+        plt.title('P')    
+        
+        plt.subplot(224)
+        for i in [9,10,11]:
+            plt.plot(event_points['July_03'][event][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('Q')    
+        plt.show()
+        
+        gr=input("which group?:   ")
+        
+        if not gr in group:
+            permission=input('sure?')
+            if permission=='y':
+                group[gr]=[event]
+            else:
+                gr=input("which group?:   ")
+                if not gr in group:
+                    permission=input('sure?')
+                    if permission=='y':
+                        group[gr]=[event]
+        else:
+            group[gr].append(event)
+#%%
+# =============================================================================
+# =============================================================================
+# # save the groups        
+# =============================================================================
+# =============================================================================
+
+categoriesfile="data/Armin_Data/categories.pkl"
+#%%
+output = open(categoriesfile, 'wb')
+pkl.dump(group, output)
+output.close()
+#%%
+pkl_file = open(categoriesfile, 'rb')
+saved_group = pkl.load(pkl_file)
+pkl_file.close()
+    
+#%%
+# =============================================================================
+# =============================================================================
+# # show the mean value of each category
+# =============================================================================
+# =============================================================================
+
+count=0
+for g in saved_group:
+    group_size=len(saved_group[g])
+    for event in saved_group[g]:
+        if count==0:
+            mean_events=event_points['July_03'][event]
+            count=1
+        else:
+            mean_events+=event_points['July_03'][event]
+    mean_events=mean_events/group_size
+    print("group name: ",g,"  number of events:  ",group_size)
+    plt.subplot(221)
+    for i in [0,1,2]:
+        plt.plot(mean_events[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('V')
+        
+    plt.subplot(222)
+    for i in [3,4,5]:
+        plt.plot(mean_events[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('I')  
+    
+    plt.subplot(223)
+    for i in [6,7,8]:
+        plt.plot(mean_events[i])
+    plt.legend('A' 'B' 'C') 
+    plt.title('P')    
+    
+    plt.subplot(224)
+    for i in [9,10,11]:
+        plt.plot(mean_events[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('Q')    
+    plt.show()
+    print(".......................")
+
+
+
+
+
+
 #%%
 # =============================================================================
 # =============================================================================
 # #         save the anomalies standardized data for 15 days
 # =============================================================================
 # =============================================================================
-anomcsvfile="data/Armin_Data/anomsknnformat.pkl"
-output = open(anomcsvfile, 'wb')
-pkl.dump(event_points, output)
-output.close()
+#anomcsvfile="data/Armin_Data/anomsknnformat.pkl"
+#output = open(anomcsvfile, 'wb')
+#pkl.dump(event_points, output)
+#output.close()
 #%%
+# =============================================================================
+# =============================================================================
+# # read event_points
+# =============================================================================
+# =============================================================================
 anomcsvfile="data/Armin_Data/anomsknnformat.pkl"
 pkl_file = open(anomcsvfile, 'rb')
 event_points = pkl.load(pkl_file)
@@ -212,8 +473,16 @@ time_4features=toc-tik
 #        plt.show()
 #        print('...........................................................')
 #%%
+# =============================================================================
+# =============================================================================
+# # calculating fft for each event and save them
+# =============================================================================
+# =============================================================================
+
+
 fft_scores={}
 total_events=0
+all_evnets_scores=[]
 for day1 in event_points:
     fft_scores[day1]={}
 #    print(day1)
@@ -224,7 +493,14 @@ for day1 in event_points:
         x1=event_points[day1][anom1][::3]-np.mean(event_points[day1][anom1][::3],axis=1).reshape(4,1)      
         
         fft_scores[day1][anom1]=np.concatenate((np.fft.fftn(x1)[:,0:120].real.ravel(),np.fft.fftn(x1)[:,0:120].imag.ravel()),axis=None)
+   # =============================================================================
+# =============================================================================
+# # make trainig data with fft output
+# =============================================================================
+# =============================================================================
 
+
+        all_evnets_scores.append(np.concatenate((np.fft.fftn(x1)[:,0:120].real.ravel(),np.fft.fftn(x1)[:,0:120].imag.ravel()),axis=None))
         
         if count% 500==0:
             print('iter num: %count', count)
@@ -233,6 +509,68 @@ anomcsvfile="data/Armin_Data/fftscores.pkl"
 output = open(anomcsvfile, 'wb')
 pkl.dump(fft_scores, output)
 output.close()
+
+
+all_evnets_scores=np.array(all_evnets_scores)
+
+all_evnets_scores_file="data/Armin_Data/all_evnets_scores_file.pkl"
+output = open(all_evnets_scores_file, 'wb')
+pkl.dump(all_evnets_scores, output)
+output.close()
+
+#%%
+X=all_evnets_scores
+
+for n_clusters in np.arange(10,50):
+    clusterer = KMeans(n_clusters=n_clusters, random_state=0)
+    cluster_labels = clusterer.fit_predict(X)
+    silhouette_avg = silhouette_score(X, cluster_labels)
+    print("For n_clusters =", n_clusters,
+          "The average silhouette_score is :", silhouette_avg)
+#%%
+# =============================================================================
+# =============================================================================
+# # best cluster number by fft is 18 based in silhouette
+# =============================================================================
+# =============================================================================
+n_clusters=18
+clusterer = KMeans(n_clusters=n_clusters, random_state=0)
+cluster_labels = clusterer.fit_predict(X)
+#%%
+# =============================================================================
+# =============================================================================
+# # predict the labels for main dataset
+# =============================================================================
+# =============================================================================
+labels={}
+start=0
+end=0
+for day in event_points:
+    num_anom=len(event_points[day].keys())
+    end=start+num_anom
+    selected_fft=all_evnets_scores[start:end]
+    labels[day]=clusterer.fit_predict(selected_fft)
+    start=end
+    print(day)
+#%%
+# =============================================================================
+# =============================================================================
+# # show some sample from each cluster in one day
+# =============================================================================
+# =============================================================================
+    
+count=0
+for anom in event_points['July_03']:
+    print(labels['July_03'][count])
+    plt.subplot(121)
+    plt.plot(event_points['July_03'][anom][0])
+    plt.subplot(122)
+    plt.plot(event_points['July_03'][anom][3])
+    plt.show()
+    count+=1
+    
+#%%
+
 #%%%
 for day1 in ['July_03']:
     similarity_scores[day1]={}
@@ -257,4 +595,4 @@ for day1 in ['July_03']:
         plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
               vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
         plt.show()
-
+        #%%

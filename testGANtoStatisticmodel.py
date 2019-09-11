@@ -334,13 +334,21 @@ discriminator=load_model('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b100
 # =============================================================================
 files=os.listdir('data/Armin_Data')
 #%%
+selected_files=[]
+for f in files:
+    s=f.split('_')
+    if 'July' in s:
+        selected_files.append(f)
+#%%
 # =============================================================================
 # make a place to save all 1224 events data wrt each day, whether my method or Alirezas
 # =============================================================================
-dst="figures/1224_15_days"
+dst="figures/all_events"
 os.mkdir(dst)
 #%%
-for file in ['July_14']:
+#for num,file in enumerate(selected_files):
+for file in ['July_17']:
+    num=14  
     if file == 'July_03':
         continue
 # =============================================================================
@@ -349,8 +357,8 @@ for file in ['July_14']:
     print(file)
     start,SampleNum,N=(0,40,500000)
     dir="data/Armin_Data/"+ file + "/pkl/"
-    selectedfile=os.listdir(dir)[0]
-    filename = dir + selectedfile
+#    selectedfile=os.listdir(dir+str(num+3))
+    filename = dir+'J'+str(num+3)+'.pkl'
     X_train= load_data(start,SampleNum,N,filename)
     #batch_count = X_train.shape[0] / batch_size
     
@@ -378,7 +386,7 @@ for file in ['July_14']:
 # =============================================================================
 # obtain the boundaries for events
 # =============================================================================
-    zp=3
+    zp=2
     
     data = a
 # Fit a normal distribution to the data:
@@ -396,13 +404,14 @@ for file in ['July_14']:
 # =============================================================================
 # make file to save photos for the GAN model
 # =============================================================================
-    dst="figures/1224_15_days/"+file
-    os.mkdir(dst)
+    
+    dst="figures/all_events/"+file
+#    os.mkdir(dst)
     dst=dst+"/GAN"
     os.mkdir(dst)
-# =============================================================================
-#     save training number period as an events
-# =============================================================================
+    # =============================================================================
+    #     save training number period as an events
+    # =============================================================================
     anomcsvfile=dst+"/anoms_"+file+".csv"
     np.savetxt(anomcsvfile, anoms_1224, delimiter=",")
     
@@ -412,41 +421,41 @@ for file in ['July_14']:
         
         plt.subplot(221)
         for i in [0,1,2]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
         plt.legend('A' 'B' 'C')
         plt.title('V')
             
         plt.subplot(222)
         for i in [3,4,5]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
         plt.legend('A' 'B' 'C')
         plt.title('I')  
         
         plt.subplot(223)
         for i in [6,7,8]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
         plt.legend('A' 'B' 'C') 
         plt.title('P')    
         
         plt.subplot(224)
         for i in [9,10,11]:
-            plt.plot(select_1224[i][anom*int(SampleNum/2)-120:(anom*int(SampleNum/2)+120)])
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
         plt.legend('A' 'B' 'C')
         plt.title('Q')    
         figname=dst+"/"+str(anom)
         plt.savefig(figname)
         plt.show()
-# =============================================================================
-# find the wide range of anomalies point to compare with Alirezas data    
-# =============================================================================
-        low=anom*20-120
-        high=anom*20+120
+    # =============================================================================
+    # find the wide range of anomalies point to compare with Alirezas data    
+    # =============================================================================
+        low=anom*20-240
+        high=anom*20+240
         rng=np.arange(low,high)
         event_points.append(rng)
     event_points=np.array(event_points).ravel()
     
-
-
+    
+#%%    
     # =============================================================================
     # =============================================================================
     # # read pointers from matlab file: (Alireza's results)
@@ -459,49 +468,49 @@ for file in ['July_14']:
     points.sort()
     
     
-# =============================================================================
-# common anomalies GAN and window
-# =============================================================================
+    # =============================================================================
+    # common anomalies GAN and window
+    # =============================================================================
     common_anoms=np.intersect1d(points,event_points)
-    dst="figures/1224_15_days/"+file
+    dst="figures/all_events/"+file
     anomcsvfile=dst+"/common"+file+".csv"
     np.savetxt(anomcsvfile, common_anoms, delimiter=",")
-# =============================================================================
-# make folder to save Alirezas event in the same day
-# =============================================================================
-    dst="figures/1224_15_days/"+file
+    # =============================================================================
+    # make folder to save Alirezas event in the same day
+    # =============================================================================
+    dst="figures/all_events/"+file
     dst=dst+"/window"
     os.mkdir(dst)
-# =============================================================================
-#     save the window method event points
-# =============================================================================
+    # =============================================================================
+    #     save the window method event points
+    # =============================================================================
     anomcsvfile=dst+"/anoms_"+file+".csv"
     np.savetxt(anomcsvfile, points, delimiter=",")
-
+    
     for anom in points:
         print(anom)
         
         plt.subplot(221)
         for i in [0,1,2]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
+            plt.plot(select_1224[i][anom-240:(anom+240)])
         plt.legend('A' 'B' 'C')
         plt.title('V')
             
         plt.subplot(222)
         for i in [3,4,5]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
+            plt.plot(select_1224[i][anom-240:(anom+240)])
         plt.legend('A' 'B' 'C')
         plt.title('I')  
         
         plt.subplot(223)
         for i in [6,7,8]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
+            plt.plot(select_1224[i][anom-240:(anom+240)])
         plt.legend('A' 'B' 'C') 
         plt.title('P')    
         
         plt.subplot(224)
         for i in [9,10,11]:
-            plt.plot(select_1224[i][anom-120:(anom+120)])
+            plt.plot(select_1224[i][anom-240:(anom+240)])
         plt.legend('A' 'B' 'C')
         plt.title('Q')    
         figname=dst+"/"+str(anom)

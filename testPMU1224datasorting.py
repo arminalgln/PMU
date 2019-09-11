@@ -273,7 +273,7 @@ for point in old_pointer:
 # =============================================================================
 #     load real data
 # =============================================================================
-filename='data/Armin_Data/July_03/pkl/J3.pkl'
+filename='data/Armin_Data/July_17/pkl/J17.pkl'
 def load_real_data(filename):
          #read a pickle file
          
@@ -305,7 +305,10 @@ new_pointer.sort()
 
 dst="figures/1224_15_days/July_03/window"
 
+dir=
 
+    os.remove(dir+'/window')
+    os.mkdir(dir+'/window')
 # =============================================================================
 #     save the window method event points
 # =============================================================================
@@ -316,25 +319,25 @@ for anom in old_pointer:
     
     plt.subplot(221)
     for i in [0,1,2]:
-        plt.plot(select_1224[i][anom-120:(anom+240)])
+        plt.plot(select_1224[i][anom-240:(anom+240)])
     plt.legend('A' 'B' 'C')
     plt.title('V')
         
     plt.subplot(222)
     for i in [3,4,5]:
-        plt.plot(select_1224[i][anom-120:(anom+240)])
+        plt.plot(select_1224[i][anom-240:(anom+240)])
     plt.legend('A' 'B' 'C')
     plt.title('I')  
     
     plt.subplot(223)
     for i in [6,7,8]:
-        plt.plot(select_1224[i][anom-120:(anom+240)])
+        plt.plot(select_1224[i][anom-240:(anom+240)])
     plt.legend('A' 'B' 'C') 
     plt.title('P')    
     
     plt.subplot(224)
     for i in [9,10,11]:
-        plt.plot(select_1224[i][anom-120:(anom+240)])
+        plt.plot(select_1224[i][anom-240:(anom+240)])
     plt.legend('A' 'B' 'C')
     plt.title('Q')    
     figname=dst+"/"+str(anom)
@@ -365,7 +368,7 @@ def OneFileImport(filename,dir):
     return imported_data
     
 #%%
-for n in [3]:
+for n in np.arange(3,18):
     if n<10:
         num='0'+str(n)
     else:
@@ -375,9 +378,9 @@ for n in [3]:
     
     foldernames=os.listdir(dir)
     selected_files=np.array([])
-    for f in fl:
+    for f in foldernames:
         spl=f.split('_')
-        if 'Hunter' in spl:
+        if 'Bld' in spl:
             selected_files=np.append(selected_files,f)
 #    filenames1224=foldernames[0:24]
     #filenames1224.sort(key=lambda f: int(filter(str.isdigit, f)))
@@ -435,7 +438,15 @@ for n in [3]:
         day_data['1224'][key]=whole_data[:,c]
         c+=1
 
-    dir=dir+'/pkl/J'+str(n)+'.pkl'
+# =============================================================================
+#     for Bld
+# =============================================================================
+    dir=dir+'/pklBld'
+    os.mkdir(dir)
+    
+    
+    
+    dir=dir+'/J'+str(n)+'.pkl'
         # write python dict to a file
     
     output = open(dir, 'wb')

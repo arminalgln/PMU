@@ -33,6 +33,8 @@ from scipy.fftpack import fft, ifft
 from dtw import dtw
 from fastdtw import fastdtw
 import time
+from scipy.spatial.distance import euclidean
+from tslearn.clustering import GlobalAlignmentKernelKMeans
 
 #%% 
    
@@ -292,14 +294,24 @@ fft_scores={}
 fs=[]
 for event in anomalies['July_03']:
     event=int(event)
-    v=np.absolute(fft(event_points[event][0])[1:120])    
-    i=np.absolute(fft(event_points[event][3])[1:120])
-    p=np.absolute(fft(event_points[event][6])[1:120])    
-    q=np.absolute(fft(event_points[event][9])[1:120])
+    v=[]
+    i=[]
+    p=[]
+    q=[]
+    for j in range(3):
+        v.append(np.absolute(fft(event_points[event][0+j])[1:120]))
+        i.append(np.absolute(fft(event_points[event][3+j])[1:120]))
+        p.append(np.absolute(fft(event_points[event][6+j])[1:120]))   
+        q.append(np.absolute(fft(event_points[event][9+j])[1:120]))
+    v= [item for sublist in v for item in sublist]
+    i=[item for sublist in i for item in sublist]
+    p=[item for sublist in p for item in sublist]
+    q=[item for sublist in q for item in sublist]
+        
     vi=np.concatenate((v,i))
     pq=np.concatenate((p,q))
     fft_scores[event]=np.concatenate((vi,pq))
-    fs.append(np.concatenate((v,i)))
+    fs.append(np.concatenate((vi,pq)))
 fs=np.array(fs)
     
 #%%
@@ -310,7 +322,7 @@ fs=np.array(fs)
 # =============================================================================
 X=fs
 mm=0
-for n_clusters in np.arange(2,30):
+for n_clusters in np.arange(2,15):
     clusterer = KMeans(n_clusters=n_clusters, random_state=0)
     cluster_labels = clusterer.fit_predict(X)
     silhouette_avg = silhouette_score(X, cluster_labels)
@@ -325,10 +337,64 @@ print(mm)
 # # best so far
 # =============================================================================
 # =============================================================================
-n_clusters=15
+n_clusters=6
 clusterer = KMeans(n_clusters=n_clusters, random_state=0)
 cluster_labels = clusterer.fit_predict(X)
+#%%
+# =============================================================================
+# =============================================================================
+# # show the cluster center
+# =============================================================================
+# =============================================================================
 
+centers={}
+for cl in range(n_clusters):
+    count=0
+    print(cl)
+    centers[cl]=np.zeros((12,240))
+    for num,event in enumerate(event_points):
+        if cluster_labels[num]==cl:
+            count+=1
+            centers[cl]+=event_points[event]
+    centers[cl]=centers[cl]/count
+    plt.subplot(221)
+    for i in [0,1,2]:
+        plt.plot(centers[cl][i])
+    plt.legend('A' 'B' 'C')
+    plt.title('V')
+        
+    plt.subplot(222)
+    for i in [3,4,5]:
+        plt.plot(centers[cl][i])
+    plt.legend('A' 'B' 'C')
+    plt.title('I')  
+    
+    plt.subplot(223)
+    for i in [6,7,8]:
+        plt.plot(centers[cl][i])
+    plt.legend('A' 'B' 'C') 
+    plt.title('P')    
+    
+    plt.subplot(224)
+    for i in [9,10,11]:
+        plt.plot(centers[cl][i])
+    plt.legend('A' 'B' 'C')
+    plt.title('Q')    
+    plt.show()
+    
+#%%
+
+for cl in range(n_clusters):
+    count=0
+    
+    for num,event in enumerate(event_points):
+        if cluster_labels[num]==cl:
+            if count<20:
+                print(cl)
+                plt.plot(fft_scores[event])
+                plt.show()
+    
+                count+=1
 #%%
 # =============================================================================
 # =============================================================================
@@ -342,7 +408,7 @@ for cl in range(n_clusters):
     
     for num,event in enumerate(event_points):
         if cluster_labels[num]==cl:
-            if count<20:
+            if count<2:
                 print(cl)
                 plt.subplot(221)
                 for i in [0,1,2]:
@@ -766,3 +832,115 @@ for event in anomalies['July_03']:
 #              vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
 #        plt.show()
         #%%
+k=list(event_points.keys())
+dtw_scores={}
+#x1=event_points[351][0]-np.mean(event_points[351][0])
+for event1 in k[0:20]:
+    x1=event_points[event1][0]-np.mean(event_points[event1][0])
+    dtw_scores[event1]=[]
+    print(event1)
+    for event2 in k[0:20]:
+        x2=event_points[event2][0]-np.mean(event_points[event2][0])
+    #    plt.plot(x1)
+    #    plt.plot(x2)
+    #    plt.show()
+        distance, path = fastdtw(x1, x2, dist=euclidean)
+    #    d, cost_matrix, acc_cost_matrix, path = dtw(x1, x2, dist=euclidean_norm)
+    #    plt.imshow(acc_cost_matrix.T, origin='lower', cmap='gray', interpolation='nearest')
+    #    
+    #    plt.plot(path[0], path[1], 'w')
+    #    plt.show()
+    #    d
+        dtw_scores[event1].append(distance)
+#%%
+ds=[]
+for i in dtw_scores:
+    ds.append(list(dtw_scores[i]))
+ds=np.array(ds)
+    #%%
+plt.plot(dtw_scores)
+#%%
+for num,event in enumerate(event_points):
+    if dtw_scores[num]<10:
+        plt.plot(event_points[event][0])
+        plt.show()
+        #%%
+plt.imshow(ds.transpose(), origin='lower', cmap='gray', interpolation='nearest')
+#%%
+from tslearn.clustering import TimeSeriesKMeans
+#%%
+X_train=[]
+for event in k[0:1000]:
+    X_train.append(list(event_points[event]))
+    #%%
+km = GlobalAlignmentKernelKMeans(n_clusters=6)
+km.fit(X_train)
+#%%
+lb=km.labels_
+#%%
+for yi in range(n_clusters):
+    indices = [i for i, x in enumerate(lb) if x == yi]
+#    plt.subplot(3, 1, 1 + yi)
+    count=0
+    for ind in indices:
+        if count<10:
+            print(yi)
+            plt.subplot(221)
+            for i in [0,1,2]:
+                plt.plot(X_train[ind][i])
+            plt.legend('A' 'B' 'C')
+            plt.title('V')
+                
+            plt.subplot(222)
+            for i in [3,4,5]:
+                plt.plot(X_train[ind][i])
+            plt.legend('A' 'B' 'C')
+            plt.title('I')  
+            
+            plt.subplot(223)
+            for i in [6,7,8]:
+                plt.plot(X_train[ind][i])
+            plt.legend('A' 'B' 'C') 
+            plt.title('P')    
+            
+            plt.subplot(224)
+            for i in [9,10,11]:
+                plt.plot(X_train[ind][i])
+            plt.legend('A' 'B' 'C')
+            plt.title('Q')    
+            plt.show()
+#        plt.plot(X_train[ind][3])
+            count+=1
+        
+    plt.show()
+    
+#%%
+
+cent=km.cluster_centers_
+for c in cent:
+    plt.subplot(221)
+    for i in [0,1,2]:
+        plt.plot(c[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('V')
+        
+    plt.subplot(222)
+    for i in [3,4,5]:
+        plt.plot(c[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('I')  
+    
+    plt.subplot(223)
+    for i in [6,7,8]:
+        plt.plot(c[i])
+    plt.legend('A' 'B' 'C') 
+    plt.title('P')    
+    
+    plt.subplot(224)
+    for i in [9,10,11]:
+        plt.plot(c[i])
+    plt.legend('A' 'B' 'C')
+    plt.title('Q')    
+    plt.show()
+    #%%%%%%%%%%%%%%5
+from scipy.cluster import hierarchy

@@ -329,7 +329,7 @@ shape=[]
 maxmin=np.zeros((1700,4))
 for i in range(1700):
     print(i)
-    zp=(i/10)+3
+    zp=(i/10)+32
     high=mu+zp*std
     low=mu-zp*std
     anoms_1225=np.union1d(np.where(a>=high)[0], np.where(a<=low)[0])
@@ -394,7 +394,7 @@ for i in anoms_1225[0:100] :
     
 #%%
     
-select_1225=load_real_data(filename)
+select=load_real_data(filename)
 #%%
 dst="figures/1225_100_batch_anoms"
 os.mkdir(dst)

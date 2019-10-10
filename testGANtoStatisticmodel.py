@@ -258,8 +258,8 @@ gan=load_model('GPU_gan_mul_LSTM_twolayer_N500000_e1000_b100.h5')
 generator=load_model('GPU_generator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
 discriminator=load_model('GPU_discriminator_mul_LSTM_twolayer_N500000_e1000_b100.h5')
 #%%
-filename='data/Armin_Data/July_03/pkl/jul3.pkl'
-start,SampleNum,N,filename=(0,40,500000,'CompleteOneDay.pkl')
+filename='data/Armin_Data/July_13/pkl/J13.pkl'
+start,SampleNum,N,filename=(0,40,500000,filename)
 
 X_train= load_data(start,SampleNum,N,filename)
 #batch_count = X_train.shape[0] / batch_size
@@ -311,6 +311,7 @@ plt.hist(data, bins=25, density=True, alpha=0.6, color='g')
 
 # Plot the PDF.
 xmin, xmax = plt.xlim()
+
 x = np.linspace(xmin, xmax, 100)
 p = norm.pdf(x, mu, std)
 plt.plot(x, p, 'k', linewidth=2)

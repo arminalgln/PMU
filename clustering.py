@@ -34,7 +34,7 @@ import time
 from scipy.spatial.distance import euclidean
 from tslearn.clustering import GlobalAlignmentKernelKMeans
 import loading_data
-from loading_data import load_real_data, load_standardized_data,load_train_data,load_train_data_V
+from loading_data import load_real_data, load_standardized_data,load_train_data,load_train_data_V,load_standardized_data_with_features
 from scipy import stats
 from sklearn.ensemble import IsolationForest
 import seaborn as sns; sns.set()
@@ -109,9 +109,14 @@ for i in [0]:
 data_file='data/Armin_Data/July_03/pkl/J3.pkl'
 std_data=load_standardized_data(data_file)
 #%%
+# =============================================================================
+# =============================================================================
+# # saving data for events
+# =============================================================================
+# =============================================================================
 r_data=load_real_data(data_file)
 scale=20
-shift=120
+shift=240
 
 real_data={}
 std_no_mean_data={}
@@ -166,39 +171,41 @@ pkl_file.close()
 # # selected event points for testifg clustering methods
 # =============================================================================
 # =============================================================================
-selected_events=[350,351,11158,7417,21809,62447,42498,54563,66279,102488,103869
-                 ,103860,103871,105156,69018,57959,56316,309485,306447,295168
-                 ,255848,348846,348898,349143,349524,30855,28396,148978,49131,64830
-                 ,77780,67276,121772,400302]
-ii=0
-for anom in classes[0]:
-#    print(corr[14][ii])
-    ii+=1
-    plt.subplot(221)
-    for i in [0,1,2]:
-        plt.plot(std_no_mean_data[anom][i])
-    plt.legend('A' 'B' 'C')
-    plt.title('V')
-        
-    plt.subplot(222)
-    for i in [3,4,5]:
-        plt.plot(std_no_mean_data[anom][i])
-    plt.legend('A' 'B' 'C')
-    plt.title('I')  
-    
-    plt.subplot(223)
-    for i in [6,7,8]:
-        plt.plot(std_no_mean_data[anom][i])
-    plt.legend('A' 'B' 'C') 
-    plt.title('P')    
-    
-    plt.subplot(224)
-    for i in [9,10,11]:
-        plt.plot(std_no_mean_data[anom][i])
-    plt.legend('A' 'B' 'C')
-    plt.title('Q')    
+#selected_events=[350,351,11158,7417,21809,62447,42498,54563,66279,102488,103869
+#                 ,103860,103871,105156,69018,57959,56316,309485,306447,295168
+#                 ,255848,348846,348898,349143,349524,30855,28396,148978,49131,64830
+#                 ,77780,67276,121772,400302]
 
-    plt.show()
+def pltshow(inp):
+    ii=0
+    for anom in inp:
+    #    print(corr[14][ii])
+        ii+=1
+        plt.subplot(221)
+        for i in [0,1,2]:
+            plt.plot(std_no_mean_data[anom][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('V')
+            
+        plt.subplot(222)
+        for i in [3,4,5]:
+            plt.plot(std_no_mean_data[anom][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('I')  
+        
+        plt.subplot(223)
+        for i in [6,7,8]:
+            plt.plot(std_no_mean_data[anom][i])
+        plt.legend('A' 'B' 'C') 
+        plt.title('P')    
+        
+        plt.subplot(224)
+        for i in [9,10,11]:
+            plt.plot(std_no_mean_data[anom][i])
+        plt.legend('A' 'B' 'C')
+        plt.title('Q')    
+    
+        plt.show()
     
 #%%
 # =============================================================================
@@ -227,18 +234,23 @@ for i in selected_events:
 dtw_dists=np.array(dtw_dists)
 
 #%%
-ax = sns.heatmap(corr)
+#%%
+events=np.array(list(std_no_mean_data.keys()))
+evt_num=events.shape[0]
+random_select=np.random.choice(evt_num, 500, replace=False)    
+selected_random_events=events[random_select]
  
 #%%
 N=len(std_no_mean_data.keys())
 N=selected_random_events.shape[0]
 corr=np.zeros((N,N))
 for idx1,anom1 in enumerate(selected_random_events):
-    if idx1% 10==0:
+    if idx1% 100==0:
         print('iter num: %i', idx1)
+    tik=time.clock()
     for idx2,anom2 in enumerate(selected_random_events):
         if idx2>=idx1:
-            if idx2% 10==0:
+            if idx2% 100==0:
                 print('iter num: %i', idx2)
             max_corr=0
             for i in range(120):
@@ -251,16 +263,10 @@ for idx1,anom1 in enumerate(selected_random_events):
             corr[idx1,idx2]=max_corr
         else:
             corr[idx1,idx2]=corr[idx2,idx1]
-#%%
-events=np.array(list(std_no_mean_data.keys()))
-evt_num=events.shape[0]
-random_select=np.random.choice(evt_num, 200, replace=False)    
-selected_random_events=events[random_select]
-#%%
-s=[]
-for id,h in enumerate(correlation200[20]):
-    if h> 0.7:
-        s.append(selected_random_events[id])
+    toc = time.clock()
+    print(toc-tik)
+
+
 #%%
 # =============================================================================
 # =============================================================================
@@ -271,7 +277,7 @@ trh=0.7
 classes={}
 count=0
 remain=corr.shape[0]
-while remain>2:
+while remain>1:
     ax = sns.heatmap(corr)
 #    plt.plot(ax)
     classes[count]=[]
@@ -293,8 +299,105 @@ while remain>2:
     corr=corr[rows][:,rows]
     remain=corr.shape[0]
     plt.show()
+#%%
+trh=0.7
+classes={}
+count=0
+remain=corr.shape[0]
+sre=np.copy(selected_random_events)
+#sre=list(sre)
+corr=np.copy(correlation200)
+while remain>0:
+    print(sre)
+    ax = sns.heatmap(corr)
+#    plt.plot(ax)
+    classes[count]=[]
+    del_ids=[]
+    rows=list(np.arange(1,remain+1)-1)
+    for id,h in enumerate(corr[0]):
+        if h> trh:
+            classes[count].append(sre[id])
+            del_ids.append(id)
+            rows.remove(id)
+#    for i in del_ids:
+#        for id,h in enumerate(corr[i]):
+#            if h> 0.7:
+#                if not selected_random_events[id] in classes[count]:
+#                    classes[count].append(selected_random_events[id])
+#                    if id in rows:
+#                        rows.remove(id)
+    count+=1
+    corr=corr[rows][:,rows]
+    sre=np.array(sre)
+    sre=sre[rows]
+    remain=corr.shape[0]
+    plt.show()
+    #%%
+for i in new_candidates:
+#    if len(classes[i])<10:
+    print(i)
+    i=[i]
+    pltshow(i)
 
+
+#%%
+trh=0.7    
+sre=np.copy(selected_random_events500)
+corr=np.copy(correlation500)
+#%%
+def corr_similar_grouping(corr,sre,trh):
     
+    classes={}
+    count=0
+    remain=corr.shape[0]
+    
+    #sre=list(sre)
+    counter=0
+    while remain>0:
+#        print(remain)
+#        print(sre)
+#        if counter<5:
+#            ax = sns.heatmap(corr)
+    #    plt.plot(ax)
+        classes[count]=[]
+        del_ids=[]
+        rows=list(np.arange(1,remain+1)-1)
+        for id,h in enumerate(corr[0]):
+#            print(id,h)
+            if h> trh:
+                
+                
+                col=np.copy(corr[:,id])
+                if col.shape[0]>1:
+                    col=list(col)
+                    maxcol=max(col)
+                    col.remove(maxcol)
+                    maxcol=max(col)
+                else:
+                    col=list(col)
+                    maxcol=max(col)
+                
+                if h>=maxcol:
+                
+                    classes[count].append(sre[id])
+                    del_ids.append(id)
+                    rows.remove(id)
+    #    for i in del_ids:
+    #        for id,h in enumerate(corr[i]):
+    #            if h> 0.7:
+    #                if not selected_random_events[id] in classes[count]:
+    #                    classes[count].append(selected_random_events[id])
+    #                    if id in rows:
+    #                        rows.remove(id)
+        count+=1
+        corr=corr[rows][:,rows]
+        sre=np.array(sre)
+        sre=sre[rows]
+        remain=corr.shape[0]
+        plt.show()
+        counter+=1
+    
+    return classes
 #%%
 # =============================================================================
 # =============================================================================
@@ -302,28 +405,156 @@ while remain>2:
 # =============================================================================
 # =============================================================================
 def pick_the_candidate(group):
-    
+#    print(group)
+    sre=np.copy(selected_random_events500)
+    corr=np.copy(correlation500)
+    candidate=group[0]
     max=0
-    if len(group)>1:
+    if len(group)>0:
         for i in group:
             
-            idx1=list(selected_random_events).index(i)
+            idx1=list(sre).index(i)
             temp=0
             for j in group:
-                idx2=list(selected_random_events).index(j)
+                idx2=list(sre).index(j)
                 if not i==j:
                     temp+=corr[idx1,idx2]
-            print(temp)
+#            print(temp)
             if max<temp:
                 
                 max=temp
                 candidate=i
-    else:
-        candidate=group
 
     return candidate
+
 #%%
+def find_all_candidates(classes):
     
+    candidates=[]
+    for  cl in classes:
+#        print(cl)
+        candidates.append(pick_the_candidate(classes[cl]))
+    return candidates
+   
+#%%
+def candidate_dist(candidates):
+    
+    sre=np.copy(selected_random_events500)
+    sre=list(sre)
+    corr=np.copy(correlation500)
+    selected_idx=[]
+    for cand in candidates:
+        idx=sre.index(cand)
+        selected_idx.append(idx)
+        
+    can_corr=corr[selected_idx][:,selected_idx]
+        
+    
+    return can_corr
+#%%
+def merge_clusters(candidates,classes):
+    count=0
+    new_class={}
+    new_corr=candidate_dist(candidates)
+    merge_candidates=corr_similar_grouping(new_corr,candidates,trh)
+    for ngr in merge_candidates:
+        new_class[count]=[]
+        for can in merge_candidates[ngr]:
+            idx=candidates.index(can)
+            selected_class=classes[idx]
+            new_class[count].append(selected_class)
+        new_class[count] = [item for sublist in new_class[count] for item in sublist]
+        count+=1
+    
+    merge_candidates=find_all_candidates(new_class)
+    
+    
+    
+    return merge_candidates,new_class
+#%%
+def clustering_point(classes):
+    
+    def each_cluster_point(cl):
+        sre=np.copy(selected_random_events500)
+        sre=list(sre)
+        corr=np.copy(correlation500)
+        selected_idx=[]
+        for event in cl:
+            
+            idx=sre.index(event)
+            selected_idx.append(idx)
+            
+        can_corr=corr[selected_idx][:,selected_idx]
+        corr_sum=np.sum(can_corr)
+        corr_sum=corr_sum/len(cl)
+        return corr_sum
+    
+    point=0
+    
+    for cl in classes:
+        point+=each_cluster_point(classes[cl])    
+    
+    return point
+
+    
+#%%
+# =============================================================================
+# =============================================================================
+# #recursive correlation clustering
+# =============================================================================
+# =============================================================================
+eps=0.01
+ind=100
+trh=0.7
+sre=np.copy(selected_random_events500)
+corr=np.copy(correlation500)
+checking=0
+
+#extract the classes
+classes=corr_similar_grouping(corr,sre,trh)
+#who's teh candidate
+candidates=find_all_candidates(classes)
+#distance correlation between the candidates
+cand_dist=candidate_dist(candidates)
+
+while checking==0:
+    sre=np.copy(selected_random_events500)
+    corr=np.copy(correlation500)
+    #merge the clustersm
+    new_candidates,new_classes=merge_clusters(candidates,classes)
+    #check the candidates 
+    if new_candidates==candidates:
+        checking=1
+    
+    candidates=new_candidates
+    classes=new_classes
+#%%
+
+
+class_numbers=len(list(classes.keys()))
+NC=20
+trh=0.69
+step=0.01
+while trh>=0.6:
+    sre=np.copy(selected_random_events500)
+    corr=np.copy(correlation500)
+    #merge the clustersm
+    new_candidates,new_classes=merge_clusters(candidates,classes)
+    #check the candidates 
+    candidates=new_candidates
+    classes=new_classes
+    class_numbers=len(list(classes.keys()))
+    trh=trh-step
+    print(clustering_point(classes))
+    print(class_numbers)
+    print(trh)
+#%%
+sre=np.copy(selected_random_events500)
+corr=np.copy(correlation500)   
+    
+  
+
+
     
     
     

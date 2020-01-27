@@ -482,7 +482,7 @@ def rep_check(inp):
 #%%
 riz=np.setdiff1d(rep_check(anoms3['maxvar']),rep_check(anoms31['maxvar']))
 #%%
-for anom in riz:
+for anom in np.arange(145,166):
     print(anom)
     
     plt.subplot(221)
@@ -663,11 +663,11 @@ plt.show()
 data=[]
 #xt, lmbda = stats.boxcox((whole_features['scores'])+1)
 #xt=preprocessing.scale(xt)
-data.append(whole_features['scores'])
-
-#xt, lmbda = stats.boxcox((whole_features['scores_V'])+1)
-#xt=preprocessing.scale(xt)
-data.append(whole_features['scores_V'])
+#data.append(whole_features['scores'])
+#
+##xt, lmbda = stats.boxcox((whole_features['scores_V'])+1)
+##xt=preprocessing.scale(xt)
+#data.append(whole_features['scores_V'])
 
 xt, lmbda = stats.boxcox((whole_features['maxvar']))
 #xt=preprocessing.scale(xt)
@@ -693,7 +693,7 @@ select_1224=load_real_data(filename)
 # =============================================================================
 zp=3
 
-names=['scores','scores_V','maxvar','maxmaxmin']
+names=['maxvar','maxmaxmin']
 basic_anoms={}
 for i,d in enumerate(data):
     dt = d
@@ -714,7 +714,7 @@ for i,d in enumerate(data):
 # =============================================================================
 zp=3.1
 
-names=['scores','scores_V','maxvar','maxmaxmin']
+names=['maxvar','maxmaxmin']
 detected_anoms={}
 for i,d in enumerate(data):
     dt = d
@@ -836,7 +836,9 @@ for anom in detected_union_unique:
 # # scatter plot of just GAN model with two scores as feature 
 # =============================================================================
 # =============================================================================
-
+import matplotlib
+#matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['text.usetex'] = False
 fig, ax = plt.subplots() # create a new figure with a default 111 subplot
 
 ax.scatter(whole_features['scores_scale'],whole_features['scores_scale_V'],c=whole_features['color'],label=whole_features['color'])
@@ -844,8 +846,9 @@ ax.scatter(whole_features['scores_scale'],whole_features['scores_scale_V'],c=who
 
 plt.gca().axes.get_xaxis().set_ticklabels([])
 plt.gca().axes.get_yaxis().set_ticklabels([])
-plt.xlabel('Score from main GAN',fontsize=25)
-plt.ylabel('Score from GAN voltage',fontsize=25)
+#'\\textit{Velocity (\N{DEGREE SIGN}/sec)}
+plt.xlabel('Score from main GAN_{i,p,q}',fontsize=25)
+plt.ylabel('Score from GAN_{v}',fontsize=25)
 #plt.label('Normal', 'Event',fontsize=25)
 
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
@@ -905,3 +908,4 @@ def rep_check(inp):
     return output
 #%%
 riz=np.setdiff1d(rep_check(anoms3['maxvar']),rep_check(anoms31['maxvar']))
+

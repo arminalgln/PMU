@@ -34,7 +34,7 @@ import time
 from scipy.spatial.distance import euclidean
 from tslearn.clustering import GlobalAlignmentKernelKMeans
 import loading_data
-from loading_data import load_real_data, load_standardized_data,load_train_data,load_train_data_V
+from loading_data import load_real_data, load_standardized_data,load_train_data,load_train_data_V,load_data_with_features
 
 from sklearn.ensemble import IsolationForest
 #%%
@@ -43,34 +43,49 @@ filename='data/Armin_Data/July_03/pkl/J3.pkl'
 start,SampleNum,N,filename=(0,40,500000,filename)
 select_1224=load_real_data(filename)
 #%%
-anom_select=[103863, 322691, 323002, 55919, 60613]
-anom_select=[322691]
-scale=21
-shift=220
+filename='data/Armin_Data/July_03/pkl/rawdata3.pkl'
+k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','L1Ang','L2Ang','L3Ang','C1Ang','C2Ang','C3Ang']
+#%%
+dds=load_standardized_data_with_features(filename,k)
+#%%
+dd=load_data_with_features(filename,k)
+
+#%%
+anom_select=[60613]
+
+#anom_select=[350,351,3182,4743,7419,49465,57881,67737,69018,88255,254519,127594,144417,12901,254742,12914,13130,26959,30703,496291]
+
+#anom_select=[36687, 37490, 41092, 54565, 66277, 84418, 85595, 322135, 338446, 425659, 354777,339351, 252725]
+scale=8
+shift=0
+k=0
+select_1224=dd
 for anom in anom_select:
+        k+=1
         print(anom)
         anom=int(anom)
         plt.subplot(221)
         for i in [2,1,0]:
             plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift)])
-        plt.legend('A' 'B' 'C',fontsize= 20,loc=6)
+#        plt.legend('A' 'B' 'C',fontsize= 20,loc=6)
         plt.yticks(fontsize=15)
+#        plt.ylim([7100,7230])
 #        plt.figtext(.5,.9,'Temperature', fontsize=100, ha='center')
-        plt.title('V (Volts)',fontsize= 30)
+        plt.title('V (magnitude)',fontsize= 30)
         
             
         plt.subplot(222)
         for i in [3,4,5]:
             plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift)])
 #        plt.legend('A' 'B' 'C')
-        plt.title('I (Amps)',fontsize= 30)  
+        plt.title('V (Angle)',fontsize= 30)  
         plt.yticks(fontsize=15)
         
         plt.subplot(223)
         for i in [6,7,8]:
             plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift)]/1000)
 #        plt.legend('A' 'B' 'C') 
-        plt.title('P (kW)',fontsize= 30)    
+        plt.title('I (Magnitude)',fontsize= 30)    
         plt.xlabel('Timeslots',fontsize= 30)
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
@@ -79,11 +94,11 @@ for anom in anom_select:
         for i in [11,10,9]:
             plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift)]/1000)
 #        plt.legend('A' 'B' 'C')
-        plt.title('Q (kVAR)',fontsize= 30)
+        plt.title('I (Angle)',fontsize= 30)
         plt.xlabel('Timeslots',fontsize= 30)
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
-        
+#        plt.savefig('event.pdf', format='pdf')
 #        figname='figures/paper/huge_osc.pdf'
 #        plt.savefig(figname)
         plt.show()#%%
@@ -92,7 +107,7 @@ for anom in anom_select:
 # =============================================================================
 # jsut GAN scores
 # =============================================================================
-plt.scatter(whole_features['maxmaxmin'], whole_features['maxvar'],color=whole_features['color'])
+plt.scatter(whole_features['scores_V'], whole_features['scores'],color=whole_features['color'])
 #plt.legend('Noraml' 'Events',fontsize= 20,loc=6)
 plt.yticks(fontsize=15)
 #        plt.figtext(.5,.9,'Temperature', fontsize=100, ha='center')
@@ -195,3 +210,110 @@ acc=(TP+TN)/(TP+TN+FP+FN)
 f1=(2*TP)/(2*TP+FP+FN)
 mcc=((TP*TN)-(FP*FN))/np.sqrt((TP+FP)*(TP+FN)*(TN*FP)*(TN*FN))
 print(acc,f1,mcc)
+#%%%
+
+# =============================================================================
+# =============================================================================
+# =============================================================================
+# # # correlation plot for ivpq
+# =============================================================================
+# =============================================================================
+# =============================================================================
+corr={}
+
+
+days=np.arange(3,18)
+for d in days:
+    cr=np.zeros((12,12))
+    if d<10:
+        
+        filename='data/Armin_Data/July_0'+str(d)+'/pkl/J'+str(d)+'.pkl'
+    else:
+        filename='data/Armin_Data/July_'+str(d)+'/pkl/J'+str(d)+'.pkl'
+    data=load_real_data(filename)
+    for i in range(12):
+        print(i)
+        for j in range(12):
+            if i >=j:
+                cr[i,j]=np.corrcoef(data[i],data[j])[0,1]
+                cr[j,i]=cr[i,j]
+    
+    sns.heatmap(cr)
+    corr[d]=cr
+#%%
+for d in corr:
+    print(d)
+    sns.heatmap(corr[d])
+    plt.show()
+    
+    
+#%%
+
+sns.heatmap(corr[15])
+#%%
+anom_select=[30855, 35292, 46381, 49019, 49998, 74174]
+anom_select=[322691]
+
+scale=1100
+shift=1283000
+for anom in anom_select:
+        print(anom)
+        anom=int(anom)
+
+        plt.subplot(221)
+        for i in [2]:
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift-20000)])
+        plt.legend('A' 'B' 'C',fontsize= 20,loc=6)
+        plt.yticks(fontsize=15)
+        plt.ylim([7120,7200])
+#        plt.figtext(.5,.9,'Temperature', fontsize=100, ha='center')
+        plt.title('V (Volts)',fontsize= 30)
+#        plt.xlabel('Timeslots',fontsize= 30)
+#        plt.xticks(fontsize=15)
+#        plt.yticks(fontsize=15)
+#        
+#            
+        plt.subplot(222)
+        for i in [3]:
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift-20000)])
+#        plt.legend('A' 'B' 'C')
+        plt.title('I (Amps)',fontsize= 30)  
+        plt.yticks(fontsize=15)
+        plt.ylim([100,150])
+
+        
+        plt.subplot(223)
+        for i in [6]:
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift-20000)]/1000)
+#        plt.legend('A' 'B' 'C') 
+        plt.title('P (kW)',fontsize= 30)    
+        plt.xlabel('Timeslots',fontsize= 30)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.ylim([900,1040])
+        
+        plt.subplot(224)
+        for i in [11]:
+            plt.plot(select_1224[i][anom*int(SampleNum/2)-40*scale+shift:(anom*int(SampleNum/2)+40*scale+shift-20000)]/1000)
+#        plt.legend('A' 'B' 'C')
+        plt.title('Q (kVAR)',fontsize= 30)
+        plt.xlabel('Timeslots',fontsize= 30)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+
+#        figname='figures/paper/huge_osc.pdf'
+#        plt.savefig(figname)
+        plt.show()#%%
+
+
+
+
+
+
+
+
+
+
+
+
+

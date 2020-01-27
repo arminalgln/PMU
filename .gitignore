@@ -26,6 +26,8 @@ soft-dtw/
 *.mat
 *.pkl
 *.csv
+*.eps
+*.out
 
 # Packages #
 ############

@@ -239,6 +239,48 @@ def load_standardized_data_with_features(filename,features):
     
     return select
 
+def load_train_vitheta_data_1225(start,SampleNum,N,filename,features):
+         #read a pickle file
+    pkl_file = open(filename, 'rb')
+    selected_data = pkl.load(pkl_file)
+    pkl_file.close()
+    
+    selected_data=pd.DataFrame.from_dict(selected_data)
+#    features=['L1MAG','L2MAG', 'L3MAG']
+    
+    print(selected_data.keys())
+    select=[]
+    for f in features:
+        select.append(selected_data[f])
+    
+    
+    selected_data=0
+    select=np.array(select)
+    
+    print(select.shape)
+    select=preprocessing.scale(select,axis=1)
+    
+#    selected_data=0
+    end=start+SampleNum
+    shift=int(SampleNum/2)
+    
+    train_data=np.zeros((N,9,SampleNum))
+#    reduced_mean=np.zeros((12,20))
+    for i in range(N):
+        if i% 1000==0:
+            print('iter num: %i', i)
+        temp=select[:,start+i*shift:end+i*shift] 
+        temp=(temp-temp.mean(axis=1).reshape(-1,1)) ## reduced mean
+#        temp = preprocessing.scale(temp,axis=1)  ## standardized
+#        reduced_mean=np.concatenate((reduced_mean,temp[:,0:20]),axis=1)
+        train_data[i,:]=temp
+    
+    
+    # convert shape of x_train from (60000, 28, 28) to (60000, 784) 
+    # 784 columns per row
+    
+    return train_data#,select,selected_data#,select_proc,reduced_mean
+
 
 def load_train_vitheta_data_V(start,SampleNum,N,filename,features):
          #read a pickle file

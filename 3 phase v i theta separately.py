@@ -26,6 +26,8 @@ import time
 from scipy.stats import norm
 from scipy.io import loadmat
 from natsort import natsorted
+from scipy import stats
+from seaborn import heatmap
 
 import loading_data
 from loading_data import load_real_data, load_standardized_data,load_train_data,load_train_data_V,load_train_vitheta_data_V,load_data_with_features,load_standardized_data_with_features
@@ -448,6 +450,7 @@ for idx1,F1 in enumerate(anomalies):
         
             
 #%%
+select_1224=dd
 def show(events):
     SampleNum=40
     for anom in events:

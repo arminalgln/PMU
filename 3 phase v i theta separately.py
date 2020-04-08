@@ -54,13 +54,13 @@ def OneFileImport(filename,dir):
 # #     save data with V I and theta
 # =============================================================================
 # =============================================================================
-for n in [3]:
+for n in [14]:
     if n<10:
-        dir="data/Armin_Data/July_0"+str(n)+"/"
+        dir="../../UCR/PMU data/Data/July_0"+str(n)+"/"
     else:
-        dir="data/Armin_Data/July_"+str(n)+"/"
+        dir="../../UCR/PMU data/Data/July_"+str(n)+"/"
 #dir='data/Armin_Data/July_03'
-
+#os.listdir('../../UCR/PMU data/Data')
     foldernames=os.listdir(dir)
     selected_files=np.array([])
     for f in foldernames:
@@ -86,9 +86,9 @@ for n in [3]:
         
         selected_data=OneFileImport(file,dir)    
         
-#        cosin['TA']=np.cos((selected_data['L1Ang']-selected_data['C1Ang'])*(np.pi/180))
-#        cosin['TB']=np.cos((selected_data['L2Ang']-selected_data['C2Ang'])*(np.pi/180))
-#        cosin['TC']=np.cos((selected_data['L3Ang']-selected_data['C3Ang'])*(np.pi/180))
+        cosin['TA']=np.cos((selected_data['L1Ang']-selected_data['C1Ang'])*(np.pi/180))
+        cosin['TB']=np.cos((selected_data['L2Ang']-selected_data['C2Ang'])*(np.pi/180))
+        cosin['TC']=np.cos((selected_data['L3Ang']-selected_data['C3Ang'])*(np.pi/180))
             
     #    Reacive['A']=selected_data['L1Mag']*selected_data['C1Mag']*(np.sin((selected_data['L1Ang']-selected_data['C1Ang'])*(np.pi/180)))
     #    Reacive['B']=selected_data['L2Mag']*selected_data['C2Mag']*(np.sin((selected_data['L2Ang']-selected_data['C2Ang'])*(np.pi/180)))
@@ -99,11 +99,11 @@ for n in [3]:
         #pf['C']=Active['C']/np.sqrt(np.square(Active['C'])+np.square(Reacive['C']))
         
         
-#        selected_data['TA']=cosin['TA']
-#        selected_data['TB']=cosin['TB']
-#        selected_data['TC']=cosin['TC']
+        selected_data['TA']=cosin['TA']
+        selected_data['TB']=cosin['TB']
+        selected_data['TC']=cosin['TC']
         
-        selected_data=selected_data.drop(columns=['Unnamed: 0'])
+        selected_data=selected_data.drop(columns=['Unnamed: 0','L1Ang', 'L2Ang', 'L3Ang','C1Ang', 'C2Ang', 'C3Ang'])
     
     #    
     #    selected_data['QA']=Reacive['A']
@@ -116,7 +116,7 @@ for n in [3]:
             whole_data=np.append(whole_data,selected_data.values,axis=0)
             
     k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','L1Ang','L2Ang','L3Ang','C1Ang','C2Ang','C3Ang']
-        
+    k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
     day_data={}
     day_data['1224']={}
     c=0
@@ -136,7 +136,7 @@ for n in [3]:
     else:
         dir="data/Armin_Data/July_"+str(n)+"/pkl/rawdata" + str(n) + ".pkl"
     output = open(dir, 'wb')
-    pickle.dump(day_data, output)
+    pkl.dump(day_data, output)
     output.close()
     print(n)
 
@@ -159,6 +159,25 @@ start,SampleNum,N=(0,40,500000)
 filename='data/Armin_Data/July_03/pkl/julseppf3.pkl'
 k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
 tt=load_train_vitheta_data_V(start,SampleNum,N,filename,k)
+
+#%%
+filename='data/Armin_Data/July_10/pkl/rawdata10.pkl'
+k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+#dds14=load_standardized_data_with_features(filename,k)
+dd14=load_data_with_features(filename,k)
+start,SampleNum,N=(0,40,500000)
+#filename='data/Armin_Data/July_03/pkl/julseppf3.pkl'
+#k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+#tt14=load_train_vitheta_data_V(start,SampleNum,N,filename,k)
+#%%
+filename='data/Armin_Data/July_07/pkl/rawdata7.pkl'
+k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+dds7=load_standardized_data_with_features(filename,k)
+dd7=load_data_with_features(filename,k)
+start,SampleNum,N=(0,40,500000)
+#filename='data/Armin_Data/July_03/pkl/julseppf3.pkl'
+#k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+#tt7=load_train_vitheta_data_V(start,SampleNum,N,filename,k)
 #%%
 def adam_optimizer():
     return adam(lr=0.0002, beta_1=0.5)
@@ -389,6 +408,7 @@ scores={}
 probability_mean={}
 anomalies={}
 #k=k[0:3]
+#k=['L1MAG','C1MAG','TA']
 for idx,key in enumerate(k):
     print(key)
     X_train_temp=X_train[:,idx]

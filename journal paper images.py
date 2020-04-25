@@ -1,3 +1,178 @@
+#Manual representatives for the journal paper
+class Candidates():
+    def Data(self,name,day,window):
+        self.day=day
+        self.window=window
+        self.name=name
+    def lr(self,l,r):
+        self.l=l
+        self.r=r
+#%%
+Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
+Day=[3,3,3,3,3,3,3,3,14,3,3,3]
+Window=[219430,425659,88255,90415,347701,11816,46382,30703,453528,323233,13652,103866]
+l=[0,0,30,]
+r=[40,35,230,]
+reps={}
+for i,n in enumerate(Clustersname):
+    reps[n]=Candidates()
+    reps[n].Data(n,Day[i],Window[i])
+reps['big']=Candidates()
+reps['big'].Data('big',3,347701)
+#%%
+# =============================================================================
+# =============================================================================
+# #     save events for journal 
+# =============================================================================
+# =============================================================================
+    
+dst='journal/new/'
+def show_event(ev,select_1224,dst):
+    SampleNum=40
+    c=['r','b','k']
+    anom=ev.window
+
+    print(anom)
+    anom=int(anom)
+#            anom=events[anom]
+#            print(anom)
+    space1=30
+    space=230
+#    plt.set(adjustable='box-forced', aspect='equal')
+    ax1=plt.subplot(311)
+#    ax1.set(adjustable='box', aspect='equal')
+
+    for i in [0,1,2]:
+        plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+        plt.grid(True)
+
+    plt.legend('A' 'B' 'C',loc=1)
+    plt.ylabel(r'$|V|_{(v)}$',fontsize=10)
+#    plt.axis('equal')
+#            plt.title('V')
+        
+    ax2=plt.subplot(312,sharex=ax1)
+#    ax2.set(adjustable='box', aspect='equal')
+    for i in [3,4,5]:
+        from matplotlib.ticker import StrMethodFormatter
+#                plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
+        plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+        plt.grid(True)
+    plt.ylabel(r'$|I|_{(Amp)}$',fontsize=10)
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+
+    ax3=plt.subplot(313,sharex=ax1)
+#    ax3.set(adjustable='box', aspect='equal')
+    for i in [6,7,8]:
+        plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}')) # 2 decimal places
+#                plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
+#            plt.legend('A' 'B' 'C')
+        plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+        plt.grid(True)
+#    plt.axis('equal')
+
+#            plt.legend('A' 'B' 'C') 
+    plt.xlim(0,space1+space-1)
+    plt.ylabel(r'$cos(\theta)$',fontsize=10)
+    hfont = {'fontname':'serif'}
+    plt.xlabel('Timestamps',fontsize=11,**hfont)    
+#    plt.xlabel('Timestamps',fontsize=15)
+    figname=dst+ev.name+'_'+str(ev.window)+'_Jul'+str(ev.day)
+    plt.savefig(figname,dpi=800)
+    plt.grid(True)
+    plt.axis('equal')
+    
+    plt.show()
+    close()
+           
+    
+    
+#%%
+Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
+
+%matplotlib auto
+ev=reps['med']
+dst='journal/new/'
+show_event(ev,dd3,dst)
+#%matplotlib auto
+
+#%%
+# =============================================================================
+# =============================================================================
+# # big event picture
+# =============================================================================
+# =============================================================================
+select_1224=dd3
+SampleNum=40
+c=['r','b','k']
+ev=reps['dynamic']
+anom=ev.window
+space1=740
+space=140
+#    plt.set(adjustable='box-forced', aspect='equal')
+#ax1=plt.subplot(311)
+#    ax1.set(adjustable='box', aspect='equal')
+
+for i in [3,4,5]:
+    plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+    plt.grid(True)
+plt.xlim(0,space1+space)
+plt.legend('A' 'B' 'C',loc=2)
+plt.ylabel(r'$|V|_{(v)}$',fontsize=10)
+plt.show()
+#    plt.axis('equal')
+#            plt.title('V')
+#%%
+ev=reps['dynamic']
+anom=ev.window
+space1=740
+space=50000
+
+
+#ax2=plt.subplot(312,sharex=ax1)
+#    ax2.set(adjustable='box', aspect='equal')
+for i in [3,4,5]:
+    from matplotlib.ticker import StrMethodFormatter
+#                plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
+    plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+    plt.grid(True)
+plt.ylabel(r'$|I|_{(Amp)}$',fontsize=10)
+plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
+plt.show()
+
+
+
+#%%
+ev=reps['backtoback']
+anom=ev.window
+space1=340
+space=65
+
+#ax3=plt.subplot(313,sharex=ax1)
+#    ax3.set(adjustable='box', aspect='equal')
+for i in [3,4,5]:
+    plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}')) # 2 decimal places
+#                plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
+#            plt.legend('A' 'B' 'C')
+    plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
+    plt.grid(True)
+#    plt.axis('equal')
+
+#            plt.legend('A' 'B' 'C') 
+plt.ylabel(r'$cos(\theta)$',fontsize=10)
+hfont = {'fontname':'sans-serif'}
+plt.xlabel('Timestamps',fontsize=13,**hfont)
+
+#plt.ylim(-100,100)
+plt.xlim(0,space1+space)
+#figname=dst+'big'
+#plt.savefig(figname,dpi=800)
+plt.grid(True)
+#plt.axis('equal')
+
+plt.show()
+#close()
+#%%
 # =============================================================================
 # =============================================================================
 # =============================================================================
@@ -5,10 +180,10 @@
 # =============================================================================
 # =============================================================================
 # =============================================================================
-filename='data/Armin_Data/July_14/pkl/rawdata14.pkl'
+filename='data/Armin_Data/July_03/pkl/rawdata3.pkl'
 k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
 #dds14=load_standardized_data_with_features(filename,k)
-dd14=load_data_with_features(filename,k)
+dd3=load_data_with_features(filename,k)
 start,SampleNum,N=(0,40,500000)
 #%%
 import seaborn as sn
@@ -48,9 +223,10 @@ figure.savefig('journal/figures/heatmap.png',dpi=800)
 # =============================================================================
 # =============================================================================
 
-dst='journal/figures'
-def show_event(events,select_1224,dst):
+dst='journal/'
+def show_event(ev,select_1224,dst):
     SampleNum=40
+    c=['r','b','k']
     for anom in events:
             print(anom)
             anom=int(anom)
@@ -61,9 +237,9 @@ def show_event(events,select_1224,dst):
             
             plt.subplot(311)
             for i in [0,1,2]:
-                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)])
+                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
             plt.legend('A' 'B' 'C')
-            plt.ylabel(r'$|V|$',fontweight='bold',fontsize=10)
+            plt.ylabel(r'$|V|_{(v)}$',fontsize=30)
 
 #            plt.title('V')
                 
@@ -72,22 +248,22 @@ def show_event(events,select_1224,dst):
                 from matplotlib.ticker import StrMethodFormatter
 #                plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}')) # No decimal places
                 plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.1f}')) # 2 decimal places
-                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)])
+                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
 #            plt.legend('A' 'B' 'C')
-            plt.ylabel(r'$|I| $',fontweight='bold',fontsize=10)
+            plt.ylabel(r'$|I|_{(Amp)}$',fontsize=30)
             
             plt.subplot(313)
             for i in [6,7,8]:
                 plt.gca().yaxis.set_major_formatter(StrMethodFormatter('{x:,.2f}')) # 2 decimal places
 #                plt.plot(select_1224[i][anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)])
 #            plt.legend('A' 'B' 'C')
-                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)])
+                plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
 #            plt.legend('A' 'B' 'C') 
-            plt.ylabel(r'$cos(\theta)$',fontweight='bold',fontsize=10)  
-            figname=dst+"/"+str(anom)
+            plt.ylabel(r'$cos(\theta)$',fontweight='bold',fontsize=20)
+            plt.xlabel('Timestamps',fontsize=20)
+            figname=dst+"/"+name+'_'+str(day)
             plt.savefig(figname,dpi=800)
             
-             
             plt.show()
             close()
             

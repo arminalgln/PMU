@@ -11,8 +11,8 @@ class Candidates():
 Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
 Day=[3,3,3,3,3,3,3,3,14,3,3,3]
 Window=[219430,425659,88255,90415,347701,11816,46382,30703,453528,323233,13652,103866]
-l=[0,0,30,]
-r=[40,35,230,]
+l=[0,0,30,140,740,-10,40,10,700,280,30,150]
+r=[40,35,230,240,140,60,270,70,150,80,65,150]
 reps={}
 for i,n in enumerate(Clustersname):
     reps[n]=Candidates()
@@ -36,8 +36,8 @@ def show_event(ev,select_1224,dst):
     anom=int(anom)
 #            anom=events[anom]
 #            print(anom)
-    space1=30
-    space=230
+    space1=700
+    space=150
 #    plt.set(adjustable='box-forced', aspect='equal')
     ax1=plt.subplot(311)
 #    ax1.set(adjustable='box', aspect='equal')
@@ -45,8 +45,9 @@ def show_event(ev,select_1224,dst):
     for i in [0,1,2]:
         plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
         plt.grid(True)
+    plt.legend([r'Phase A', r'Phase B', r'Phase C'],loc=4,fontsize= 'x-small')
 
-    plt.legend('A' 'B' 'C',loc=1)
+#    plt.legend([r'Phase A', r'Phase B', r'Phase C'],loc='best',fontsize= 'x-small', bbox_to_anchor=(0.6, 0.25, 0.35, 0.35))
     plt.ylabel(r'$|V|_{(v)}$',fontsize=10)
 #    plt.axis('equal')
 #            plt.title('V')
@@ -91,8 +92,8 @@ def show_event(ev,select_1224,dst):
 Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
 
 %matplotlib auto
-ev=reps['med']
-dst='journal/new/'
+ev=reps['vfreq']
+dst='journal/phasefig/'
 show_event(ev,dd3,dst)
 #%matplotlib auto
 
@@ -180,7 +181,7 @@ plt.show()
 # =============================================================================
 # =============================================================================
 # =============================================================================
-filename='data/Armin_Data/July_03/pkl/rawdata3.pkl'
+filename='data/Armin_Data/July_14/pkl/rawdata14.pkl'
 k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
 #dds14=load_standardized_data_with_features(filename,k)
 dd3=load_data_with_features(filename,k)
@@ -290,7 +291,7 @@ inrush_analysis={}
 for i in inrush:
     
     anom=i
-    wdata=dd4[:,anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)]
+    wdata=dd[:,anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)]
     
     tempwdata=wdata[:,200:400]
     curr=tempwdata[3,:]
@@ -421,12 +422,14 @@ for day in total_event_cluster_data:
 
     for i in inr[day]:
         
-            
         anom=i
         wdata=dayta[:,anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)]
         
         tempwdata=wdata[:,200:400]
         curr=tempwdata[3,:]
+        active=tempwdata[0]*tempwdata[3]*tempwdata[6]
+        reactive=tempwdata[0]*tempwdata[3]*(np.sqrt(1-tempwdata[6]**2))
+
         pf=tempwdata[6,:]
         m = max(curr)
         index=[i for i, j in enumerate(curr) if j == m][0]
@@ -443,21 +446,98 @@ for day in total_event_cluster_data:
     
         if index<170 and index>30: 
             pfbefore=pf[index-30]
+            activebefore=active[index-30]
+            reactivebefore=reactive[index-30]
+            
+            pfafter=pf[index+30]
+            activepost=active[index+30]
+            reactivepost=reactive[index+30]
+            
+            color=colors[d]
+            marker=markers[d]
+            
+
+            inr_analysis[count]=[imax-ibefore,iafter-ibefore,activebefore,reactivebefore,
+                        activepost,reactivepost,pfbefore,pfafter,color,marker,anom,d]
+            count+=1
+    d+=1
+    #%%
+
+####medium events
+inr_analysis={}
+count=0
+inr={}
+colors=['r','b','c','k','g','y']
+markers=['.','^','s','*','+','d']
+d=0
+for day in total_event_cluster_data:
+    inr[day]=[]
+    for i in total_event_cluster_data[day]:
+        if total_event_cluster_data[day][i]==6:
+            inr[day].append(i)
+    filename='data/Armin_Data/July_0'+str(day)+'/pkl/j'+str(day)+'.pkl'
+    k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','PA', 'PB', 'PC','QA', 'QB', 'QC']
+    #dds4=load_standardized_data_with_features(filename,k)
+    dayta=load_data_with_features(filename,k)
+
+    
+    
+    filename='data/Armin_Data/July_0'+str(day)+'/pkl/rawdata'+str(day)+'.pkl'
+    k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+    #dds4=load_standardized_data_with_features(filename,k)
+    pfdata=load_data_with_features(filename,k)
+    ###extract the magnitude and delta for each event
+
+
+    for i in inr[day]:
+        
+        anom=i
+        wdata=dayta[:,anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)]
+        pfwdata=pfdata[:,anom*int(SampleNum/2)-240:(anom*int(SampleNum/2)+240)]
+        
+        
+        tempwdata=wdata[:,200:400]
+        pfwdata=pfwdata[:,200:400]
+        
+        curr=tempwdata[3,:]
+        active=tempwdata[6,:]
+        reactive=tempwdata[9,:]
+        pf=pfwdata[6,:]
+#        pf=tempwdata[6,:]
+        m = max(curr)
+        index=[i for i, j in enumerate(curr) if j == m][0]
+        
+        if index<170 and index>30: 
+            imax=m
+            ibefore=curr[index-30]
+            iafter=curr[index+30]
+            
+            activebefore=active[index-30]
+            reactivebefore=reactive[index-30]
+
+            activepost=active[index+30]
+            reactivepost=reactive[index+30]
+        
+            pfbefore=pf[index-30]
             pfafter=pf[index+30]
             
             color=colors[d]
             marker=markers[d]
-            inr_analysis[count]=[imax-ibefore,iafter-ibefore,pfafter-pfbefore,color,marker,anom]
+            
+
+            inr_analysis[count]=[imax-ibefore,iafter-ibefore,activebefore,reactivebefore,
+                        activepost,reactivepost,pfbefore,pfafter,color,marker,anom,d]
             count+=1
     d+=1
     #%%
-inrvalue=pd.DataFrame(inr_analysis)
-    
-    
+#inrvalue=pd.DataFrame(inr_analysis)
+#inrvalue.iloc[1]=inrvalue.iloc[1]+1
+inrvalue.iloc[11]=inrvalue.iloc[11]+4
+
 #%%
 manager = plt.get_current_fig_manager()
 manager.window.showMaximized()
-plt.scatter(inrvalue.iloc[0],inrvalue.iloc[1]+1,c=inrvalue.iloc[3])
+plt.scatter(inrvalue.iloc[7],inrvalue.iloc[6],c=inrvalue.iloc[8])
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
 plt.xlabel(r'$\Delta(I_{inrush})$',fontweight='bold',fontsize=30)
@@ -469,9 +549,18 @@ plt.show()
 #%%
 for i,j in enumerate(markers):
     idata=inrvalue.loc[:,inrvalue.iloc[4]==j]
-    plt.scatter(idata.iloc[0],idata.iloc[1]+1,c=idata.iloc[3],s=20)
+    plt.scatter(idata.iloc[3],idata.iloc[1]+1,c=idata.iloc[3],s=20)
     
-    
+    #%%
+scipy.io.savemat('inrvalue.mat', {'data':[list(inrvalue.iloc[0].values),
+                                          list(inrvalue.iloc[1].values),
+                                          list(inrvalue.iloc[2].values),
+                                          list(inrvalue.iloc[3].values),
+                                          list(inrvalue.iloc[4].values),
+                                          list(inrvalue.iloc[5].values),
+                                          list(inrvalue.iloc[6].values),
+                                          list(inrvalue.iloc[7].values),
+                                          list(inrvalue.iloc[11].values)]})
 #%%
 # =============================================================================
 # =============================================================================

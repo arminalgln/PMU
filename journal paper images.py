@@ -1,3 +1,17 @@
+#%%
+# =============================================================================
+# =============================================================================
+# =============================================================================
+# # # save heatmap to show correlation between features
+# =============================================================================
+# =============================================================================
+# =============================================================================
+filename='data/Armin_Data/July_03/pkl/rawdata3.pkl'
+k=['L1MAG','L2MAG', 'L3MAG','C1MAG','C2MAG', 'C3MAG','TA', 'TB', 'TC']
+#dds14=load_standardized_data_with_features(filename,k)
+dd3=load_data_with_features(filename,k)
+start,SampleNum,N=(0,40,500000)
+#%%
 #Manual representatives for the journal paper
 class Candidates():
     def Data(self,name,day,window):
@@ -11,14 +25,32 @@ class Candidates():
 Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
 Day=[3,3,3,3,3,3,3,3,14,3,3,3]
 Window=[219430,425659,88255,90415,347701,11816,46382,30703,453528,323233,13652,103866]
-l=[0,0,30,140,740,-10,40,10,700,280,30,150]
-r=[40,35,230,240,140,60,270,70,150,80,65,150]
+
+# =============================================================================
+# =============================================================================
+# # old l and r
+# =============================================================================
+# =============================================================================
+#l=[0,0,30,140,740,-10,40,10,700,280,30,150]
+#r=[40,35,230,240,140,60,270,70,150,80,65,150]
+
+
+# =============================================================================
+# =============================================================================
+# # new l and r
+# =============================================================================
+# =============================================================================
+
+l=[80,0,130,240,740,40,140,60,700,280,90,150]
+r=[120,35,330,340,140,110,370,120,150,80,140,150]
+
 reps={}
 for i,n in enumerate(Clustersname):
     reps[n]=Candidates()
     reps[n].Data(n,Day[i],Window[i])
-reps['big']=Candidates()
-reps['big'].Data('big',3,347701)
+    reps[n].lr(l[i],r[i])
+#reps['big']=Candidates()
+#reps['big'].Data('big',3,347701)
 #%%
 # =============================================================================
 # =============================================================================
@@ -26,7 +58,7 @@ reps['big'].Data('big',3,347701)
 # =============================================================================
 # =============================================================================
     
-dst='journal/new/'
+dst='journal/newchanges/'
 def show_event(ev,select_1224,dst):
     SampleNum=40
     c=['r','b','k']
@@ -36,8 +68,8 @@ def show_event(ev,select_1224,dst):
     anom=int(anom)
 #            anom=events[anom]
 #            print(anom)
-    space1=700
-    space=150
+    space1=ev.l
+    space=ev.r
 #    plt.set(adjustable='box-forced', aspect='equal')
     ax1=plt.subplot(311)
 #    ax1.set(adjustable='box', aspect='equal')
@@ -45,7 +77,7 @@ def show_event(ev,select_1224,dst):
     for i in [0,1,2]:
         plt.plot(select_1224[i][anom*int(SampleNum/2)-space1:(anom*int(SampleNum/2)+space)],color=c[i%3])
         plt.grid(True)
-    plt.legend([r'Phase A', r'Phase B', r'Phase C'],loc=4,fontsize= 'x-small')
+    plt.legend([r'Phase A', r'Phase B', r'Phase C'],loc=1,fontsize= 'x-small')
 
 #    plt.legend([r'Phase A', r'Phase B', r'Phase C'],loc='best',fontsize= 'x-small', bbox_to_anchor=(0.6, 0.25, 0.35, 0.35))
     plt.ylabel(r'$|V|_{(v)}$',fontsize=10)
@@ -92,8 +124,9 @@ def show_event(ev,select_1224,dst):
 Clustersname=['inrush','capbank','med','twostepmed','dynamic','currentdown','vsag','vdown','vfreq','backtoback','onetwo','noise']
 
 %matplotlib auto
-ev=reps['vfreq']
-dst='journal/phasefig/'
+ev=reps['vdown']
+    
+dst='journal/newchanges/'
 show_event(ev,dd3,dst)
 #%matplotlib auto
 
